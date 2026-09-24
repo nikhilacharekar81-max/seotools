@@ -553,7 +553,7 @@ export const PlatformProvider: React.FC<{ children: React.ReactNode }> = ({ chil
 
   // Tools: exactly ONE installed tool per User Requirement 1: Text Counter & Analyzer
   const [tools, setTools] = useState<ToolModule[]>(() => {
-    const saved = localStorage.getItem('omni_tools_installed');
+    const saved = typeof window !== 'undefined' ? localStorage.getItem('omni_tools_installed') : null;
     if (saved) {
       try {
         const parsed = JSON.parse(saved);
@@ -595,7 +595,9 @@ export const PlatformProvider: React.FC<{ children: React.ReactNode }> = ({ chil
 
   useEffect(() => {
     try {
-      localStorage.setItem('omni_tools_installed', JSON.stringify(tools));
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('omni_tools_installed', JSON.stringify(tools));
+      }
     } catch (e) {
       console.warn('Failed to persist tools to localStorage:', e);
     }
@@ -605,7 +607,7 @@ export const PlatformProvider: React.FC<{ children: React.ReactNode }> = ({ chil
 
   // Settings: SeoTools modern tech palette
   const [settings, setSettings] = useState<SiteSettings>(() => {
-    const saved = localStorage.getItem('omni_settings');
+    const saved = typeof window !== 'undefined' ? localStorage.getItem('omni_settings') : null;
     if (saved) {
       try {
         const parsed = JSON.parse(saved);
@@ -997,7 +999,9 @@ export const PlatformProvider: React.FC<{ children: React.ReactNode }> = ({ chil
 
   // Save settings
   useEffect(() => {
-    localStorage.setItem('omni_settings', JSON.stringify(settings));
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('omni_settings', JSON.stringify(settings));
+    }
   }, [settings]);
 
   // Global Keyboard shortcut: Cmd + K / Ctrl + K for Command Palette

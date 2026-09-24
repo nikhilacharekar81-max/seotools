@@ -14,22 +14,72 @@ dotenv.config();
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
+// Centralized configurations with safe default fallbacks (Phase 18)
+const PLAGIARISM_MAX_WORDS = Number(process.env.PLAGIARISM_MAX_WORDS) || 1000;
+const PLAGIARISM_URL_MAX_WORDS = Number(process.env.PLAGIARISM_URL_MAX_WORDS) || 1000;
+
+const RATE_LIMIT_LIMIT = Number(process.env.RATE_LIMIT_LIMIT) || 50; // default 50 scans per window
+const RATE_LIMIT_WINDOW_MS = Number(process.env.RATE_LIMIT_WINDOW_MS) || 60 * 60 * 1000; // default 1 hour window
+
+// Clean memory-based rate limiter map (Phase 5)
+interface RateLimitEntry {
+  count: number;
+  resetTime: number;
+}
+const rateLimitMap = new Map<string, RateLimitEntry>();
+
+/**
+ * Backend IP-Based Rate Limiting Middleware running BEFORE expensive search operations (Phase 5)
+ */
+function apiRateLimiter(req: express.Request, res: express.Response, next: express.NextFunction) {
+  const ip = String(req.headers['x-forwarded-for'] || req.socket.remoteAddress || 'unknown-ip');
+  const now = Date.now();
+  const entry = rateLimitMap.get(ip);
+
+  if (!entry || now > entry.resetTime) {
+    rateLimitMap.set(ip, {
+      count: 1,
+      resetTime: now + RATE_LIMIT_WINDOW_MS
+    });
+    return next();
+  }
+
+  if (entry.count >= RATE_LIMIT_LIMIT) {
+    return res.status(429).json({
+      error: 'Rate Limit Exceeded: You have exceeded the permitted plagiarism scans for this period. Please try again later.'
+    });
+  }
+
+  entry.count++;
+  rateLimitMap.set(ip, entry);
+  next();
+}
+
 async function startServer() {
   const app = express();
   app.use(express.json({ limit: '12mb' }));
 
   /**
    * Genuine Web-Source Plagiarism Scan Endpoint (Phase 3-11, 14, 17)
+   * Enforces server-side word count limit prior to executing expensive searches (Phase 4).
    */
-  app.post('/api/plagiarism/scan', async (req, res) => {
+  app.post('/api/plagiarism/scan', apiRateLimiter, async (req, res) => {
     const { text, excludedUrl, sensitivity } = req.body;
     
     if (!text || !text.trim()) {
       return res.status(400).json({ error: 'Text input is required' });
     }
 
+    // 1. Enforce strict server-side word limits (Phase 4)
+    const wordCount = countWords(text);
+    if (wordCount > PLAGIARISM_MAX_WORDS) {
+      return res.status(400).json({
+        error: `Input text exceeds the maximum permitted word count of ${PLAGIARISM_MAX_WORDS} words.`
+      });
+    }
+
     try {
-      console.log(`[Plagiarism scan started] Word count: ${countWords(text)}`);
+      console.log(`[Plagiarism scan started] Word count: ${wordCount}`);
       
       const report = await runBackendPlagiarismScan(text, excludedUrl, sensitivity);
       
@@ -46,9 +96,9 @@ async function startServer() {
 
   /**
    * Genuine Webpage URL Plagiarism Scan Endpoint (Phase 12, 19)
-   * Fetches URL content, extracts main text content, and pipes it through the same detection pipeline.
+   * Fetches URL content, extracts main text content, enforces URL word limits, and checks for plagiarism.
    */
-  app.post('/api/plagiarism/scan-url', async (req, res) => {
+  app.post('/api/plagiarism/scan-url', apiRateLimiter, async (req, res) => {
     const { url, excludedUrl, sensitivity } = req.body;
 
     if (!url || !url.trim()) {
@@ -58,10 +108,10 @@ async function startServer() {
     try {
       console.log(`[URL scan requested]: ${url}`);
       
-      // 1. Validate and retrieve remote HTML safely
+      // 1. Validate and retrieve remote HTML safely (Phase 6 - redirect safe)
       const html = await fetchWithSsrfProtection(url);
       
-      // 2. Extract clean body copy text
+      // 2. Extract clean body copy text using layered extraction rules (Phase 7)
       const extractedText = extractCleanArticleText(html);
       const wordCount = countWords(extractedText);
 
@@ -71,9 +121,16 @@ async function startServer() {
         });
       }
 
+      // 3. Enforce server-side URL word limits on the extracted text body (Phase 4)
+      if (wordCount > PLAGIARISM_URL_MAX_WORDS) {
+        return res.status(400).json({
+          error: 'Webpage content exceeds the maximum allowed word limit.'
+        });
+      }
+
       console.log(`[URL scan content extracted] Word count: ${wordCount}`);
 
-      // 3. Run same comparison pipeline on extracted text
+      // 4. Run same comparison pipeline on extracted text
       const report = await runBackendPlagiarismScan(extractedText, excludedUrl || url, sensitivity);
 
       return res.json({
@@ -92,34 +149,25 @@ async function startServer() {
 
   /**
    * Diagnostic Test Runner Endpoint (Phase 15 & 35)
-   * Executes a suite of controlled plagiarism scans to verify detection metrics
+   * Restricted strictly to non-production environments to avoid API quota consumption (Phase 13)
    */
   app.get('/api/plagiarism/test', async (req, res) => {
+    // Prevent unrestricted diagnostic endpoint access in production (Phase 13)
+    if (process.env.NODE_ENV === 'production') {
+      return res.status(403).json({
+        error: 'Forbidden: Diagnostic tests cannot be executed in production environments.'
+      });
+    }
+
     try {
       console.log('[Plagiarism suite test requested]');
+      const { runAutomatedTestSuite } = await import('./src/tools/plagiarism-checker/test_suite');
+      const testResults = await runAutomatedTestSuite();
 
-      // Test 1: Completely original text
-      const report1 = await runBackendPlagiarismScan('This is a completely unique sentence written from scratch that has absolutely no matches in any web search database.');
-      
-      // Test 2: Exact copied text (Wikipedia signature)
-      const report2 = await runBackendPlagiarismScan('GitHub is a developer platform that lets developers store, manage, and track modifications to software code repositories.');
-
+      const allPassed = testResults.every(t => t.passed);
       return res.json({
-        success: true,
-        tests: [
-          {
-            name: 'Test 1 - Completely original text',
-            expected: '0% plagiarism',
-            actual: `${report1.matchingPercentage}% plagiarism`,
-            passed: report1.matchingPercentage === 0
-          },
-          {
-            name: 'Test 2 - Exact copied text',
-            expected: 'plagiarism detected with sources',
-            actual: `${report2.matchingPercentage}% plagiarism with ${report2.sources.length} sources`,
-            passed: report2.matchingPercentage > 0 && report2.sources.length > 0
-          }
-        ]
+        success: allPassed,
+        tests: testResults
       });
     } catch (err: any) {
       return res.status(500).json({ success: false, error: err.message });
@@ -140,7 +188,7 @@ async function startServer() {
     app.use(vite.middlewares);
   }
 
-  const port = process.env.PORT || 3000;
+  const port = 3000;
   app.listen(port, () => {
     console.log(`Server is running at http://localhost:${port}`);
   });

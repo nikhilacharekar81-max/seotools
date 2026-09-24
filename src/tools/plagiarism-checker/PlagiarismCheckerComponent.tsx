@@ -100,7 +100,10 @@ export const PlagiarismCheckerComponent: React.FC<PlagiarismCheckerProps> = ({ t
     try {
       const stored = sessionStorage.getItem('plagiarism_checker_history');
       if (stored) {
-        setHistory(JSON.parse(stored));
+        const parsed = JSON.parse(stored);
+        if (Array.isArray(parsed)) {
+          setHistory(parsed);
+        }
       }
     } catch {}
   }, []);
@@ -108,7 +111,7 @@ export const PlagiarismCheckerComponent: React.FC<PlagiarismCheckerProps> = ({ t
   // Save history helper
   const saveToHistory = (item: SessionHistoryItem) => {
     try {
-      const updated = [item, ...history.filter(h => h.id !== item.id)].slice(0, 5);
+      const updated = [item, ...(history || []).filter(h => h.id !== item.id)].slice(0, 5);
       setHistory(updated);
       sessionStorage.setItem('plagiarism_checker_history', JSON.stringify(updated));
     } catch {}
@@ -175,7 +178,11 @@ export const PlagiarismCheckerComponent: React.FC<PlagiarismCheckerProps> = ({ t
       }
 
       setReport(resultReport);
-      setSelectedSentence(resultReport.sentences.find(s => s.matchType !== 'none') || null);
+      if (resultReport && resultReport.sentences) {
+        setSelectedSentence(resultReport.sentences.find(s => s.matchType !== 'none') || null);
+      } else {
+        setSelectedSentence(null);
+      }
       setIsChecking(false);
       setActiveTab('results');
 
@@ -307,7 +314,7 @@ ${s.matchedSource ? `Source: ${s.matchedSource.title} (${s.matchedSource.url})\n
                 </span>
               </div>
               <p className="text-sm text-slate-600 mt-2 max-w-3xl leading-relaxed">
-                Scan your writing to detect matching sentences, identify real reference web sources, and verify your citations with complete privacy.
+                Your text is processed securely to identify potentially matching web sources. Selected phrases may be sent to our configured search provider to discover publicly available sources.
               </p>
             </div>
           </div>
@@ -356,11 +363,11 @@ ${s.matchedSource ? `Source: ${s.matchedSource.title} (${s.matchedSource.url})\n
         </div>
 
         <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-xs">
-          <span className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider block">Unique Score</span>
+          <span className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider block">Unmatched Score</span>
           <span className="text-2xl font-extrabold text-emerald-600 font-mono block mt-1">
             {report ? `${report.noMatchPercentage}%` : '---'}
           </span>
-          <span className="text-[10px] text-slate-400 block mt-0.5">Original content</span>
+          <span className="text-[10px] text-slate-400 block mt-0.5">No matches found in checked sources</span>
         </div>
 
         <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-xs">
@@ -612,12 +619,22 @@ ${s.matchedSource ? `Source: ${s.matchedSource.title} (${s.matchedSource.url})\n
       {activeTab === 'results' && report && (
         <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden p-5 space-y-4">
           {report.searchStatus === 'SEARCH_ERROR' && (
-            <div className="bg-amber-50 border border-amber-200 p-4 rounded-xl text-amber-900 text-xs font-medium space-y-1">
-              <div className="flex items-center gap-1.5 font-bold">
-                <AlertTriangle className="w-4 h-4 text-amber-600" />
-                <span>Unable to complete web-source verification</span>
+            <div className="bg-rose-50 border border-rose-200 p-4 rounded-xl text-rose-950 text-xs font-medium space-y-1">
+              <div className="flex items-center gap-1.5 font-bold text-rose-800">
+                <AlertTriangle className="w-4 h-4" />
+                <span>Web-source verification could not be completed</span>
               </div>
-              <p>The search indexing service failed to return candidate URLs. Results shown are limited to internal comparison checks.</p>
+              <p>The search indexing service failed to return candidate URLs. Results shown do not include full web comparison verification.</p>
+            </div>
+          )}
+
+          {report.searchStatus === 'PARTIAL_SCAN' && (
+            <div className="bg-amber-50 border border-amber-200 p-4 rounded-xl text-amber-950 text-xs font-medium space-y-1">
+              <div className="flex items-center gap-1.5 font-bold text-amber-800">
+                <AlertTriangle className="w-4 h-4" />
+                <span>Partial web-source verification completed</span>
+              </div>
+              <p>Some sources could not be checked due to search rate limits or network issues.</p>
             </div>
           )}
 
@@ -812,7 +829,7 @@ ${s.matchedSource ? `Source: ${s.matchedSource.title} (${s.matchedSource.url})\n
         <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden p-5 space-y-4">
           <h3 className="text-sm font-bold text-slate-900 border-b border-slate-100 pb-3">Verified Reference Sources</h3>
           {report.sources.length === 0 ? (
-            <div className="text-center py-8 text-slate-500 text-xs">No matching verified web references were discovered. Your text is 100% unique!</div>
+            <div className="text-center py-8 text-slate-500 text-xs">No significant matching source found in the web sources checked.</div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {report.sources.map((src, idx) => (

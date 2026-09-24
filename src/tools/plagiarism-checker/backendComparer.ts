@@ -5,6 +5,8 @@ import {
   splitIntoSentences, 
   calculateJaccardSimilarity, 
   calculateLevenshteinSimilarity, 
+  normalizeTextForComparison,
+  computeDetailedWordDiff,
   SentenceAnalysis, 
   VerifiedSource,
   PlagiarismReport,
@@ -12,14 +14,8 @@ import {
 } from './engine';
 
 /**
- * Normalizes strings for robust exact matching (Phase 9)
- */
-function normalizeForExact(str: string): string {
-  return str.toLowerCase().replace(/[^a-z0-9]/g, '').trim();
-}
-
-/**
  * Backend Plagiarism Coordinator (Phases 8, 9, 10, 11, 18)
+ * Compares user content to real scraped webpages and returns detailed evidence metrics.
  */
 export async function runBackendPlagiarismScan(
   text: string,
@@ -28,7 +24,10 @@ export async function runBackendPlagiarismScan(
 ): Promise<PlagiarismReport> {
   const startTime = Date.now();
   const userSentences = splitIntoSentences(text);
-  const totalWords = countWords(text);
+  
+  // Word/Token list across the entire document (used for overall percentage calculations)
+  const allWords = text.split(/\s+/).filter(w => w.length > 0);
+  const totalWords = allWords.length;
   const totalCharacters = text.length;
 
   // 1. Discover potential matching web URLs
@@ -36,7 +35,9 @@ export async function runBackendPlagiarismScan(
   let searchStatus: 'COMPLETED' | 'PARTIAL_SCAN' | 'SEARCH_ERROR' = 'COMPLETED';
 
   try {
-    candidates = await discoverCandidateSources(text, excludedUrl);
+    const discovery = await discoverCandidateSources(text, excludedUrl);
+    candidates = discovery.candidates;
+    searchStatus = discovery.searchStatus;
   } catch (err: any) {
     console.error('Search Discovery failed:', err.message);
     searchStatus = 'SEARCH_ERROR';
@@ -72,24 +73,24 @@ export async function runBackendPlagiarismScan(
   const minWords = sensitivity === 'strict' ? 4 : sensitivity === 'lenient' ? 6 : 5;
   const matchThreshold = sensitivity === 'strict' ? 50 : sensitivity === 'lenient' ? 70 : 60;
 
-  // Comparison logic
   const sentenceResults: SentenceAnalysis[] = [];
   const matchedSpans: MatchedSpan[] = [];
   
-  // Set to track which word indices in the document were matched to prevent double counting (Phase 18)
-  const matchedWordsSet = new Set<number>();
+  // Map of matched word indices to prevent double counting overlapping matching ranges (Phase 2 & 18)
+  const matchedTokensFlags = new Array(totalWords).fill(false);
   let wordCursorOffset = 0;
 
   let matchingSentencesCount = 0;
   let exactMatchesCount = 0;
   let partialMatchesCount = 0;
 
+  // Track verified sources by URL (do not collapse different URLs into a single source merely due to same domain)
   const sourceMap = new Map<string, { domain: string; title: string; url: string; matchCount: number; highestSim: number }>();
 
   for (let i = 0; i < userSentences.length; i++) {
     const userSent = userSentences[i];
-    const sentenceWordCount = countWords(userSent);
-    const wordsInSent = userSent.split(/\s+/).filter(w => w.length > 0);
+    const sentenceWords = userSent.split(/\s+/).filter(w => w.length > 0);
+    const sentenceWordCount = sentenceWords.length;
 
     let bestMatch: {
       matchType: 'none' | 'exact' | 'partial';
@@ -98,15 +99,16 @@ export async function runBackendPlagiarismScan(
       snippet?: string;
     } = { matchType: 'none', score: 0 };
 
-    // Compare only if the sentence is substantive
+    // Compare only if the sentence has substantive linguistic depth
     if (sentenceWordCount >= minWords) {
-      const normalizedUser = normalizeForExact(userSent);
+      const normalizedUser = normalizeTextForComparison(userSent);
 
       // Check against each successfully retrieved web page content
       for (const [url, sourceDoc] of verifiedCorpusMap.entries()) {
-        const sourceNormalized = normalizeForExact(sourceDoc.cleanText);
+        const sourceNormalized = normalizeTextForComparison(sourceDoc.cleanText);
 
-        // 1. Exact Match verification (Phase 9)
+        // 1. Literal Exact Match verification (Phase 3 & 9)
+        // Checks if the normalized user phrase exists as a normalized contiguous phrase in the source
         if (sourceNormalized.includes(normalizedUser)) {
           bestMatch = {
             matchType: 'exact',
@@ -118,11 +120,11 @@ export async function runBackendPlagiarismScan(
               matchedSnippet: userSent
             }
           };
-          break; // Perfect match found, stop looking for this sentence
+          break; // Perfect verbatim match found, skip further comparisons for this sentence
         }
 
-        // 2. Near/Partial Match evaluation (Phase 10)
-        // Break webpage text into sentences for precision matching
+        // 2. Near/Partial Match evaluation (Phase 10 & 14)
+        // Breaks webpage text into sentences for precision Jaccard/Levenshtein matching
         const sourceSentences = splitIntoSentences(sourceDoc.cleanText);
         for (const srcSent of sourceSentences) {
           const jaccard = calculateJaccardSimilarity(userSent, srcSent);
@@ -133,7 +135,7 @@ export async function runBackendPlagiarismScan(
 
             if (score >= matchThreshold && score > bestMatch.score) {
               bestMatch = {
-                matchType: score === 100 ? 'exact' : 'partial',
+                matchType: score === 100 ? 'exact' : 'partial', // Literal Exact Match is strictly 100%
                 score,
                 source: {
                   title: sourceDoc.title,
@@ -148,7 +150,7 @@ export async function runBackendPlagiarismScan(
       }
     }
 
-    // Process matched sentence
+    // Process matched sentence and record granular token matches
     if (bestMatch.matchType !== 'none' && bestMatch.source) {
       matchingSentencesCount++;
       if (bestMatch.matchType === 'exact') {
@@ -157,9 +159,14 @@ export async function runBackendPlagiarismScan(
         partialMatchesCount++;
       }
 
-      // Track individual matched words uniquely to prevent double counting (Phase 18)
+      // Calculate actual matched tokens within this sentence (Phase 2)
+      // Uses the token-level diff status to flag exactly which words overlapped the source snippet
+      const diffResult = computeDetailedWordDiff(userSent, bestMatch.source.matchedSnippet);
       for (let wIdx = 0; wIdx < sentenceWordCount; wIdx++) {
-        matchedWordsSet.add(wordCursorOffset + wIdx);
+        const token = diffResult.userTokens[wIdx];
+        if (token && (token.status === 'exact-match' || token.status === 'partial-match')) {
+          matchedTokensFlags[wordCursorOffset + wIdx] = true;
+        }
       }
 
       const id = `sent_${i}_${Math.random().toString(36).substring(2, 6)}`;
@@ -185,18 +192,18 @@ export async function runBackendPlagiarismScan(
         source: bestMatch.source
       });
 
-      // Update source statistics
-      const dom = bestMatch.source.domain;
-      const current = sourceMap.get(dom) || {
-        domain: dom,
+      // Update source statistics by URL (keeps pages on same domain separate - Phase 8)
+      const urlKey = bestMatch.source.url;
+      const current = sourceMap.get(urlKey) || {
+        domain: bestMatch.source.domain,
         title: bestMatch.source.title,
-        url: bestMatch.source.url,
+        url: urlKey,
         matchCount: 0,
         highestSim: 0
       };
       current.matchCount++;
       current.highestSim = Math.max(current.highestSim, bestMatch.score);
-      sourceMap.set(dom, current);
+      sourceMap.set(urlKey, current);
 
     } else {
       sentenceResults.push({
@@ -212,10 +219,21 @@ export async function runBackendPlagiarismScan(
     wordCursorOffset += sentenceWordCount;
   }
 
-  // Calculate Overall Plagiarism Percentage avoiding double counting (Phase 17 & 18)
-  const totalMatchedWords = matchedWordsSet.size;
+  // =========================================================================
+  // PLAGIARISM PERCENTAGE FORMULA (Phase 2 & 17)
+  // =========================================================================
+  // Numerator: Count of unique words flagged as exact or partial matches
+  // Denominator: Total words in the submitted text
+  // Math: (numerator / denominator) * 100
+  //
+  // Double-Counting Prevention (Phase 18):
+  // Since matched words are logged as true/false flags relative to their original,
+  // sequential position in the global user word list (allWords), overlapping matches
+  // across multiple different URLs cannot inflate the overall similarity percentage.
+  // =========================================================================
+  const matchedTokensCount = matchedTokensFlags.filter(Boolean).length;
   const matchingPercentage = totalWords > 0 
-    ? Math.min(100, Math.round((totalMatchedWords / totalWords) * 100)) 
+    ? Math.min(100, Math.round((matchedTokensCount / totalWords) * 100)) 
     : 0;
   const noMatchPercentage = 100 - matchingPercentage;
 

@@ -8,9 +8,18 @@ export interface CandidateSource {
   queryMatched: string;
 }
 
-// Global default limits to prevent search provider abuse
-const MAX_SEARCH_QUERIES = 5;
-const MAX_CANDIDATE_URLS = 10;
+export interface SourceDiscoveryResult {
+  candidates: CandidateSource[];
+  searchStatus: 'COMPLETED' | 'PARTIAL_SCAN' | 'SEARCH_ERROR';
+  totalQueries: number;
+  successfulQueries: number;
+  failedQueries: number;
+  errors?: string[];
+}
+
+// Configurable global default limits from environment variables (Phase 18)
+const MAX_SEARCH_QUERIES = Number(process.env.MAX_SEARCH_QUERIES) || 5;
+const MAX_CANDIDATE_URLS = Number(process.env.MAX_CANDIDATE_URLS) || 10;
 
 /**
  * Normalizes a URL for consistent matching and comparison
@@ -46,12 +55,27 @@ export function isExcludedDomain(urlStr: string, excludedUrl?: string): boolean 
 }
 
 /**
- * Generates high-value search phrases from submitted text
- * Avoids very short sentences, common idioms, or boilerplate phrases.
+ * Computes a lightweight distinctiveness score for query prioritization (Phase 9).
+ * Sentences with longer, more complex words are prioritized first.
+ */
+function calculateDistinctiveness(sentence: string): number {
+  const words = sentence.split(/\s+/).filter(w => w.length > 0);
+  const total = words.length;
+  if (total === 0) return 0;
+  
+  const longWordsCount = words.filter(w => w.length > 5).length;
+  const longRatio = longWordsCount / total;
+
+  return total + (longRatio * 15);
+}
+
+/**
+ * Generates high-value distinctive search phrases from submitted text (Phase 9)
+ * Sorts and prioritizes the most distinctive queries first to maximize coverage.
  */
 export function generateSearchQueries(text: string): string[] {
   const rawSentences = splitIntoSentences(text);
-  const eligibleQueries: string[] = [];
+  const eligibleQueries: { sentence: string; score: number }[] = [];
 
   for (const sentence of rawSentences) {
     const trimmed = sentence.trim();
@@ -62,57 +86,78 @@ export function generateSearchQueries(text: string): string[] {
     // 2. Must not start with common navigational headings (e.g. "Table of contents", "Join our newsletter")
     // 3. Must not be purely numerical or punctuation
     if (wordCount < 6 || wordCount > 25) continue;
-    if (/^(table of contents|newsletter|contact us|get in touch|privacy policy|terms of service|copyright)/i.test(trimmed)) continue;
+    if (/^(table of contents|newsletter|contact us|get in touch|privacy policy|terms of service|copyright|about us|home)/i.test(trimmed)) continue;
     if (/^[0-9\s\-_.,;:!?'"()]+$/.test(trimmed)) continue;
 
-    eligibleQueries.push(trimmed);
+    eligibleQueries.push({
+      sentence: trimmed,
+      score: calculateDistinctiveness(trimmed)
+    });
   }
 
-  // To prevent exhausting API quotas, we only check up to a maximum number of sentences distributed across the text.
-  if (eligibleQueries.length <= MAX_SEARCH_QUERIES) {
-    return eligibleQueries;
-  }
+  // Prioritize distinctive sentences with highest linguistic density first
+  eligibleQueries.sort((a, b) => b.score - a.score);
 
-  // Distribute selections evenly across the article to capture plagiarism at different sections (Intro, Body, Outro)
-  const selectedQueries: string[] = [];
-  const step = eligibleQueries.length / MAX_SEARCH_QUERIES;
-  for (let i = 0; i < MAX_SEARCH_QUERIES; i++) {
-    const index = Math.floor(i * step);
-    selectedQueries.push(eligibleQueries[index]);
-  }
-
-  return selectedQueries;
+  return eligibleQueries.map(q => q.sentence).slice(0, MAX_SEARCH_QUERIES);
 }
 
 /**
- * Executes queries against the configured search provider to gather candidate source URLs
+ * Executes queries against the configured search provider to gather candidate source URLs (Phase 5 & 10)
+ * Safely traces queries, handles search error states, and aggregates results.
  */
 export async function discoverCandidateSources(
   text: string, 
   excludedUrl?: string
-): Promise<CandidateSource[]> {
+): Promise<SourceDiscoveryResult> {
   const queries = generateSearchQueries(text);
-  if (queries.length === 0) return [];
+  if (queries.length === 0) {
+    return {
+      candidates: [],
+      searchStatus: 'COMPLETED',
+      totalQueries: 0,
+      successfulQueries: 0,
+      failedQueries: 0
+    };
+  }
 
-  const provider = SearchProviderFactory.getProvider();
+  let provider;
+  try {
+    provider = SearchProviderFactory.getProvider();
+  } catch (err: any) {
+    console.error('Failed to initialize search provider:', err.message);
+    return {
+      candidates: [],
+      searchStatus: 'SEARCH_ERROR',
+      totalQueries: queries.length,
+      successfulQueries: 0,
+      failedQueries: queries.length,
+      errors: [err.message]
+    };
+  }
+
   const collectedCandidates: CandidateSource[] = [];
   const seenUrls = new Set<string>();
+  let successfulQueries = 0;
+  let failedQueries = 0;
+  const errors: string[] = [];
 
   // Process search queries sequentially to respect provider rate limits
   for (const query of queries) {
     try {
-      // Wrap query in double quotes to find exact matching pages on the search engine
+      // 1. Quoted exact search
       let searchResponse = await provider.search(`"${query}"`);
       
       // Fallback: If exact quoted query returns 0 results, search again without quotes
       if (searchResponse.length === 0) {
         searchResponse = await provider.search(query);
       }
+
+      successfulQueries++;
       
       for (const result of searchResponse) {
         if (!result.url) continue;
 
-        // Skip unsupported URL protocols
+        // Skip unsupported URL protocols (Phase 6)
         if (!result.url.startsWith('http://') && !result.url.startsWith('https://')) {
           continue;
         }
@@ -131,15 +176,36 @@ export async function discoverCandidateSources(
           queryMatched: query
         });
 
-        // Safe threshold limit on candidates per single scan
+        // Safe threshold limit on candidates per single scan (Phase 19)
         if (collectedCandidates.length >= MAX_CANDIDATE_URLS) {
-          return collectedCandidates;
+          break;
         }
       }
+
+      if (collectedCandidates.length >= MAX_CANDIDATE_URLS) {
+        break;
+      }
     } catch (err: any) {
-      console.warn(`Query search failed for: "${query}". Proceeding to next phrase. Error:`, err.message);
+      failedQueries++;
+      errors.push(err.message);
+      console.warn(`Query search failed for: "${query}". Error:`, err.message);
     }
   }
 
-  return collectedCandidates;
+  // Calculate strict Search Status rules (Phase 1)
+  let searchStatus: 'COMPLETED' | 'PARTIAL_SCAN' | 'SEARCH_ERROR' = 'COMPLETED';
+  if (failedQueries === queries.length) {
+    searchStatus = 'SEARCH_ERROR';
+  } else if (failedQueries > 0) {
+    searchStatus = 'PARTIAL_SCAN';
+  }
+
+  return {
+    candidates: collectedCandidates,
+    searchStatus,
+    totalQueries: queries.length,
+    successfulQueries,
+    failedQueries,
+    errors: errors.length > 0 ? errors : undefined
+  };
 }

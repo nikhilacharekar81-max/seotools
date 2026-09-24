@@ -230,14 +230,40 @@ export function splitIntoSentences(text: string): string[] {
     .replace(/\r/g, '\n')
     .trim();
 
-  const parts = clean.split(/(?<=[.!?。！？\n])\s+(?=[A-Z0-9\u4e00-\u9fa5"“'‘])/);
-  
   const sentences: string[] = [];
-  for (const part of parts) {
-    const trimmed = part.trim();
-    if (trimmed.length > 0) {
-      sentences.push(trimmed);
+  let currentSentence = '';
+  const terminators = new Set(['.', '!', '?', '。', '！', '？', '\n']);
+
+  for (let i = 0; i < clean.length; i++) {
+    const char = clean[i];
+    currentSentence += char;
+    
+    if (terminators.has(char)) {
+      let hasSpaceAfter = false;
+      let nextCharIndex = i + 1;
+      while (nextCharIndex < clean.length && /\s/.test(clean[nextCharIndex])) {
+        hasSpaceAfter = true;
+        nextCharIndex++;
+      }
+      
+      const nextChar = clean[nextCharIndex];
+      if (
+        nextCharIndex === clean.length || 
+        (hasSpaceAfter && nextChar && /[A-Z0-9\u4e00-\u9fa5"“'‘]/.test(nextChar))
+      ) {
+        const trimmed = currentSentence.trim();
+        if (trimmed.length > 0) {
+          sentences.push(trimmed);
+        }
+        currentSentence = '';
+        i = nextCharIndex - 1;
+      }
     }
+  }
+
+  const trimmedLeftover = currentSentence.trim();
+  if (trimmedLeftover.length > 0) {
+    sentences.push(trimmedLeftover);
   }
 
   if (sentences.length === 0 && clean.length > 0) {
@@ -248,14 +274,36 @@ export function splitIntoSentences(text: string): string[] {
 }
 
 /**
- * Tokenize text into normalized lowercase alphanumeric tokens.
+ * Tokenize text into normalized lowercase alphanumeric tokens supporting multilingual Unicode alphabets.
  */
 export function tokenizeText(text: string): string[] {
+  if (!text) return [];
   return text
+    .normalize('NFC')
     .toLowerCase()
-    .replace(/[^a-z0-9\s]/g, ' ')
+    .replace(/[^\p{L}\p{N}\s]/gu, ' ')
     .split(/\s+/)
     .filter(t => t.length > 1);
+}
+
+/**
+ * Performs robust multilingual normalization of sentences or paragraphs for matching (Phase 3).
+ * 1. Unicode NFC normalization
+ * 2. Lowercase conversion
+ * 3. Replaces non-letter/non-number symbols (punctuation) with whitespace to preserve word boundaries
+ * 4. Collapses whitespace
+ * 5. Trims leading/trailing spaces
+ *
+ * This function preserves non-English alphabets (e.g. Hindi, Spanish, Cyrillic, Chinese).
+ */
+export function normalizeTextForComparison(text: string): string {
+  if (!text) return '';
+  return text
+    .normalize('NFC')
+    .toLowerCase()
+    .replace(/[^\p{L}\p{N}\s]/gu, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
 }
 
 /**
@@ -453,7 +501,7 @@ export function getVerbatimMatches(userSentence: string, sourceSnippet: string):
   const sourceTokens = new Set(tokenizeText(sourceSnippet));
 
   return userWords.map(word => {
-    const cleanWord = word.toLowerCase().replace(/[^a-z0-9]/g, '');
+    const cleanWord = word.normalize('NFC').toLowerCase().replace(/[^\p{L}\p{N}]/gu, '');
     const isMatch = cleanWord.length > 2 && sourceTokens.has(cleanWord);
     return { word, isMatch };
   });
