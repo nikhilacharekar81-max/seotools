@@ -81,7 +81,7 @@ export const AdminDashboard: React.FC = () => {
           <div className="flex items-center gap-2">
             <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
             <span className="text-xs font-semibold text-blue-600 uppercase tracking-wider">
-              SmallSEOTools Platform Status: Online
+              SeoTools Platform Status: Online
             </span>
           </div>
           <h1 className="text-2xl font-bold text-slate-900 mt-1">SEO Tools Operations Control</h1>

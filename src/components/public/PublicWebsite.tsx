@@ -9,6 +9,10 @@ import { SerpPreviewComponent } from '../../tools/serp-preview/SerpPreviewCompon
 import { KeywordDensityComponent } from '../../tools/keyword-density/KeywordDensityComponent';
 import { CaseConverterComponent } from '../../tools/case-converter/CaseConverterComponent';
 import { HashGeneratorComponent } from '../../tools/hash-generator/HashGeneratorComponent';
+import { DomainAuthorityComponent } from '../../tools/domain-authority/DomainAuthorityComponent';
+import { KeywordRankTrackerComponent } from '../../tools/keyword-rank/KeywordRankTrackerComponent';
+import { XmlSitemapGeneratorComponent } from '../../tools/xml-sitemap/XmlSitemapGeneratorComponent';
+import { ToolGuideRenderer } from './ToolGuideRenderer';
 import { 
   Search, 
   Sparkles, 
@@ -35,8 +39,13 @@ import {
   Code,
   Tag,
   Eye,
-  RefreshCw
+  RefreshCw,
+  Award,
+  FileCode,
+  Bot,
+  Server
 } from 'lucide-react';
+import { getToolGuide } from '../../data/toolGuides';
 
 export const PublicWebsite: React.FC = () => {
   const { 
@@ -76,7 +85,7 @@ export const PublicWebsite: React.FC = () => {
     });
   }, [tools, searchQuery, selectedCategory]);
 
-  // Group tools by category for the classic SmallSEOTools organized view
+  // Group tools by category for the classic SeoTools organized view
   const categorizedTools = useMemo(() => {
     const map = new Map<string, ToolModule[]>();
     filteredTools.forEach(t => {
@@ -138,10 +147,10 @@ export const PublicWebsite: React.FC = () => {
         <StaticPageView page={activePage} />
       )}
 
-      {/* ROUTE 6: HOMEPAGE - SMALLSEOTOOLS PORTAL */}
+      {/* ROUTE 6: HOMEPAGE - SEOTOOLS PORTAL */}
       {publicRoute.page === 'home' && (
         <div className="flex-1 bg-[#f8fafc]">
-          {/* SmallSEOTools Signature Hero Section */}
+          {/* SeoTools Signature Hero Section */}
           <section className="bg-gradient-to-b from-slate-900 via-blue-950 to-slate-900 text-white py-14 px-4 sm:px-8 border-b border-blue-900/50 shadow-md relative overflow-hidden">
             {/* Tech grid decoration */}
             <div className="absolute inset-0 bg-[linear-gradient(to_right,#1e293b0a_1px,transparent_1px),linear-gradient(to_bottom,#1e293b0a_1px,transparent_1px)] bg-[size:24px_24px] pointer-events-none"></div>
@@ -225,12 +234,12 @@ export const PublicWebsite: React.FC = () => {
             </div>
           </section>
 
-          {/* SmallSEOTools Value Pillars Ribbon */}
+          {/* SeoTools Value Pillars Ribbon */}
           <div className="bg-white border-b border-slate-200 py-3 px-4 sm:px-8">
             <div className="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between gap-3 text-xs text-slate-600">
               <div className="flex items-center gap-2">
                 <span className="font-bold text-slate-900 uppercase tracking-wider text-[11px] bg-blue-50 text-blue-700 px-2.5 py-0.5 rounded border border-blue-200">
-                  SmallSEOTools Standard
+                  SeoTools Standard
                 </span>
                 <span className="hidden sm:inline text-slate-500">
                   Trusted by 10M+ digital marketers &amp; webmasters worldwide:
@@ -305,7 +314,7 @@ export const PublicWebsite: React.FC = () => {
                 </button>
               </div>
             ) : selectedCategory === 'All' && !searchQuery ? (
-              /* CATEGORIZED SMALLSEOTOOLS DIRECTORY VIEW */
+              /* CATEGORIZED SEOTOOLS DIRECTORY VIEW */
               <div className="space-y-12">
                 {Array.from(categorizedTools.entries()).map(([catName, catTools]) => (
                   <div key={catName} className="space-y-4">
@@ -375,7 +384,7 @@ export const PublicWebsite: React.FC = () => {
             <div className="max-w-7xl mx-auto">
               <div className="flex items-center justify-between mb-8">
                 <div>
-                  <h2 className="text-2xl font-bold text-slate-900">Latest from SmallSEOTools Blog</h2>
+                  <h2 className="text-2xl font-bold text-slate-900">Latest from SeoTools Blog</h2>
                   <p className="text-xs text-slate-500 mt-1">Actionable search optimization guides, keyword density strategies, and technical SEO tutorials.</p>
                 </div>
                 <button
@@ -425,7 +434,7 @@ export const PublicWebsite: React.FC = () => {
   );
 };
 
-// COMPONENT: Tool Card in SmallSEOTools style
+// COMPONENT: Tool Card in SeoTools style
 const ToolCard: React.FC<{ 
   tool: ToolModule; 
   onLaunch: () => void;
@@ -524,23 +533,29 @@ const renderToolIcon = (name: string) => {
     case 'Link': return <LinkIcon className="w-5 h-5" />;
     case 'Shield': return <Shield className="w-5 h-5" />;
     case 'BarChart2': return <BarChart2 className="w-5 h-5" />;
+    case 'Award': return <Award className="w-5 h-5" />;
+    case 'FileCode': return <FileCode className="w-5 h-5" />;
+    case 'Bot': return <Bot className="w-5 h-5" />;
+    case 'Server': return <Server className="w-5 h-5" />;
     default: return <Wrench className="w-5 h-5" />;
   }
 };
 
-// COMPONENT: Tool Interactive Workspace with Dynamic Page Builder Sections
+// COMPONENT: Tool Interactive Workspace
 const ToolWorkspace: React.FC<{ tool: ToolModule }> = ({ tool }) => {
   const { setPublicRoute, setViewMode, setActiveAdminTab, toggleToolStatus } = usePlatform();
-  const [openFaqIndex, setOpenFaqIndex] = useState<number | null>(0);
 
   const isTextCounter = tool.id === 'tool_text_counter' || tool.slug === 'text-counter' || tool.sourcePath?.includes('text-counter');
   const isPlagiarismChecker = tool.id === 'tool_plagiarism' || tool.slug === 'plagiarism-checker';
   const isRewriter = tool.id === 'tool_rewriter' || tool.slug === 'article-rewriter';
   const isBacklinks = tool.id === 'tool_backlink' || tool.slug === 'backlink-checker';
+  const isDomainAuthority = tool.id === 'tool_domain_authority' || tool.slug === 'domain-authority-checker' || tool.id === 'domain-authority-checker';
+  const isRankTracker = tool.id === 'tool_keyword_rank' || tool.slug === 'keyword-rank-tracker' || tool.id === 'keyword-rank-tracker';
+  const isSitemapGen = tool.id === 'tool_sitemap_gen' || tool.slug === 'xml-sitemap-generator' || tool.id === 'xml-sitemap-generator';
   const isSerpPreview = tool.id === 'tool_meta_gen' || tool.slug === 'meta-tag-generator';
-  const isKeywordDensity = tool.id === 'tool_density' || tool.slug === 'keyword-density-checker';
-  const isCaseConverter = tool.id === 'tool_case' || tool.slug === 'case-converter';
-  const isHashGen = tool.id === 'tool_md5' || tool.slug === 'md5-generator';
+  const isKeywordDensity = tool.id === 'tool_density' || tool.slug === 'keyword-density-checker' || tool.id === 'tool_keyword_density';
+  const isCaseConverter = tool.id === 'tool_case' || tool.slug === 'case-converter' || tool.id === 'tool_case_converter';
+  const isHashGen = tool.id === 'tool_md5' || tool.slug === 'hash-generator' || tool.id === 'tool_hash_gen';
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-8 py-8 flex-1 w-full space-y-6">
@@ -596,7 +611,7 @@ const ToolWorkspace: React.FC<{ tool: ToolModule }> = ({ tool }) => {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs text-slate-500">
         <div className="flex items-center gap-2">
           <button onClick={() => setPublicRoute({ page: 'home' })} className="hover:underline text-blue-600 cursor-pointer font-medium">
-            SmallSEOTools
+            SeoTools
           </button>
           <span>/</span>
           <span className="text-slate-500">{tool.category}</span>
@@ -632,280 +647,37 @@ const ToolWorkspace: React.FC<{ tool: ToolModule }> = ({ tool }) => {
         </div>
       </div>
 
-      {/* Dynamic Page Builder Sections (Ordered according to tool.pageSections) */}
-      <div className="space-y-8">
-        {tool.pageSections
-          .filter((sec: ToolPageSection) => sec.enabled)
-          .map((sec: ToolPageSection) => {
-            switch (sec.type) {
-              case 'hero':
-                return (
-                  <div key={sec.id} className="bg-white rounded-2xl border border-slate-200 p-6 sm:p-8 shadow-xs">
-                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                      <div className="flex items-start gap-4">
-                        <div className="w-12 h-12 rounded-xl bg-blue-50 border border-blue-100 text-blue-600 flex items-center justify-center shrink-0 shadow-2xs">
-                          {renderToolIcon(tool.iconName)}
-                        </div>
-                        <div>
-                          <div className="flex items-center gap-2 flex-wrap">
-                            <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900">{sec.title || tool.name}</h1>
-                            <span className="text-xs font-semibold text-blue-700 bg-blue-50 px-3 py-1 rounded-full border border-blue-200">
-                              {tool.category}
-                            </span>
-                            <span className="text-xs font-mono text-slate-500 bg-slate-100 px-2 py-0.5 rounded border border-slate-200">
-                              v{tool.version}
-                            </span>
-                          </div>
-                          <p className="text-sm text-slate-600 mt-2 max-w-3xl leading-relaxed">
-                            {tool.description}
-                          </p>
-                        </div>
-                      </div>
-
-                      <div className="flex sm:flex-col items-center sm:items-end gap-2 text-xs font-mono text-slate-500 shrink-0">
-                        <span className="inline-flex items-center gap-1 text-emerald-700 bg-emerald-50 px-2.5 py-1 rounded-md border border-emerald-200 font-semibold">
-                          <Zap className="w-3.5 h-3.5 text-emerald-600" />
-                          <span>Real-Time Engine</span>
-                        </span>
-                        <span className="inline-flex items-center gap-1 text-slate-600 bg-slate-100 px-2.5 py-1 rounded-md border border-slate-200">
-                          <Shield className="w-3.5 h-3.5 text-blue-600" />
-                          <span>100% Private</span>
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-                );
-
-              case 'tool':
-                return (
-                  <div key={sec.id} className="w-full">
-                    {isTextCounter ? (
-                      <TextCounterComponent tool={tool} />
-                    ) : isPlagiarismChecker ? (
-                      <PlagiarismCheckerComponent tool={tool} />
-                    ) : isRewriter ? (
-                      <ArticleRewriterComponent tool={tool} />
-                    ) : isBacklinks ? (
-                      <BacklinkCheckerComponent tool={tool} />
-                    ) : isSerpPreview ? (
-                      <SerpPreviewComponent tool={tool} />
-                    ) : isKeywordDensity ? (
-                      <KeywordDensityComponent tool={tool} />
-                    ) : isCaseConverter ? (
-                      <CaseConverterComponent tool={tool} />
-                    ) : isHashGen ? (
-                      <HashGeneratorComponent tool={tool} />
-                    ) : (
-                      <TextCounterComponent tool={tool} />
-                    )}
-                  </div>
-                );
-
-              case 'description':
-                return (
-                  <div key={sec.id} className="bg-white rounded-2xl border border-slate-200 p-6 sm:p-8 shadow-xs space-y-3">
-                    <h2 className="text-xl font-bold text-slate-900">{sec.title || 'About this Tool'}</h2>
-                    <div className="text-sm text-slate-600 leading-relaxed space-y-3">
-                      <p>
-                        The <strong className="text-slate-900">{tool.name}</strong> by SmallSEOTools is an industry-grade webmaster utility built for content creators, SEO specialists, copywriters, and digital agencies.
-                      </p>
-                      <p>
-                        Accurate word and character metrics, keyword density tracking, and content rhythm calibration are foundational factors in search ranking algorithms and user engagement metrics. This utility executes instantaneously with zero server lag and complete client-side data privacy.
-                      </p>
-                    </div>
-                  </div>
-                );
-
-              case 'features':
-                return (
-                  <div key={sec.id} className="bg-white rounded-2xl border border-slate-200 p-6 sm:p-8 shadow-xs space-y-5">
-                    <h2 className="text-xl font-bold text-slate-900">{sec.title || 'Key Features & Capabilities'}</h2>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                      <div className="p-4 rounded-xl bg-slate-50 border border-slate-200 space-y-1.5">
-                        <div className="flex items-center gap-2 font-bold text-slate-900 text-xs">
-                          <Shield className="w-4 h-4 text-emerald-600" />
-                          <span>100% Client-Side Privacy</span>
-                        </div>
-                        <p className="text-xs text-slate-500 leading-relaxed">
-                          All parsing runs in your browser. Your confidential content, drafts, and keywords are never uploaded or logged.
-                        </p>
-                      </div>
-
-                      <div className="p-4 rounded-xl bg-slate-50 border border-slate-200 space-y-1.5">
-                        <div className="flex items-center gap-2 font-bold text-slate-900 text-xs">
-                          <Zap className="w-4 h-4 text-amber-500" />
-                          <span>Zero-Latency Processing</span>
-                        </div>
-                        <p className="text-xs text-slate-500 leading-relaxed">
-                          Optimized asynchronous algorithms recalculate stats keystroke by keystroke with zero UI stutter.
-                        </p>
-                      </div>
-
-                      <div className="p-4 rounded-xl bg-slate-50 border border-slate-200 space-y-1.5">
-                        <div className="flex items-center gap-2 font-bold text-slate-900 text-xs">
-                          <Globe className="w-4 h-4 text-blue-600" />
-                          <span>Multilingual &amp; Unicode Ready</span>
-                        </div>
-                        <p className="text-xs text-slate-500 leading-relaxed">
-                          Full support for emojis, special punctuation marks, accents, Latin characters, and CJK ideograms.
-                        </p>
-                      </div>
-
-                      <div className="p-4 rounded-xl bg-slate-50 border border-slate-200 space-y-1.5">
-                        <div className="flex items-center gap-2 font-bold text-slate-900 text-xs">
-                          <Clock className="w-4 h-4 text-purple-600" />
-                          <span>Reading &amp; Speech Estimates</span>
-                        </div>
-                        <p className="text-xs text-slate-500 leading-relaxed">
-                          Configurable words-per-minute metrics for podcast scripts, speeches, video transcripts, and blog posts.
-                        </p>
-                      </div>
-
-                      <div className="p-4 rounded-xl bg-slate-50 border border-slate-200 space-y-1.5">
-                        <div className="flex items-center gap-2 font-bold text-slate-900 text-xs">
-                          <BarChart2 className="w-4 h-4 text-indigo-600" />
-                          <span>Keyword Density Analysis</span>
-                        </div>
-                        <p className="text-xs text-slate-500 leading-relaxed">
-                          Identify high-frequency 1-word, 2-word, and 3-word phrases to avoid keyword stuffing penalties.
-                        </p>
-                      </div>
-
-                      <div className="p-4 rounded-xl bg-slate-50 border border-slate-200 space-y-1.5">
-                        <div className="flex items-center gap-2 font-bold text-slate-900 text-xs">
-                          <CheckCircle2 className="w-4 h-4 text-emerald-600" />
-                          <span>File Upload &amp; Clipboard Copy</span>
-                        </div>
-                        <p className="text-xs text-slate-500 leading-relaxed">
-                          Ingest <code className="bg-slate-200 px-1 rounded text-slate-800">.txt</code> and <code className="bg-slate-200 px-1 rounded text-slate-800">.md</code> documents instantly or copy formatted stats with one click.
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-                );
-
-              case 'how-it-works':
-                return (
-                  <div key={sec.id} className="bg-white rounded-2xl border border-slate-200 p-6 sm:p-8 shadow-xs space-y-5">
-                    <h2 className="text-xl font-bold text-slate-900">{sec.title || 'How to Use This SEO Tool'}</h2>
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                      <div className="space-y-2">
-                        <div className="w-8 h-8 rounded-lg bg-blue-600 text-white flex items-center justify-center font-bold text-xs">
-                          1
-                        </div>
-                        <h3 className="font-bold text-slate-900 text-sm">Enter Your Text or URL</h3>
-                        <p className="text-xs text-slate-500 leading-relaxed">
-                          Type, paste content directly into the editor, or upload a document from your computer.
-                        </p>
-                      </div>
-
-                      <div className="space-y-2">
-                        <div className="w-8 h-8 rounded-lg bg-blue-700 text-white flex items-center justify-center font-bold text-xs">
-                          2
-                        </div>
-                        <h3 className="font-bold text-slate-900 text-sm">Real-Time Analysis</h3>
-                        <p className="text-xs text-slate-500 leading-relaxed">
-                          The client-side engine parses words, characters, sentences, readability grade, and keyword occurrences instantly.
-                        </p>
-                      </div>
-
-                      <div className="space-y-2">
-                        <div className="w-8 h-8 rounded-lg bg-emerald-600 text-white flex items-center justify-center font-bold text-xs">
-                          3
-                        </div>
-                        <h3 className="font-bold text-slate-900 text-sm">Copy Results or Export</h3>
-                        <p className="text-xs text-slate-500 leading-relaxed">
-                          Review keyword density percentages, adjust length to target search requirements, and copy results.
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-                );
-
-              case 'faq':
-                return (
-                  <div key={sec.id} className="bg-white rounded-2xl border border-slate-200 p-6 sm:p-8 shadow-xs space-y-4">
-                    <h2 className="text-xl font-bold text-slate-900">{sec.title || 'Frequently Asked Questions'}</h2>
-                    <div className="space-y-3">
-                      {[
-                        {
-                          q: 'Is this SEO tool really 100% free to use?',
-                          a: 'Yes! SmallSEOTools provides completely free access to our tools with no hidden subscriptions or surprise credit card requirements.'
-                        },
-                        {
-                          q: 'Do you store, save, or log the text I paste into this tool?',
-                          a: 'Never. SmallSEOTools utilizes client-side Web Workers and memory-safe processing pipelines. Your text never leaves your browser.'
-                        },
-                        {
-                          q: 'What is the ideal keyword density for SEO content?',
-                          a: 'In modern SEO, aim for a natural 1% to 2% keyword density for your primary target keyword. Avoid over-optimizing or exceeding 3%, which search engines may view as keyword stuffing.'
-                        },
-                        {
-                          q: 'Is there a character or word limit when analyzing content?',
-                          a: 'Our engine comfortably processes extensive articles, manuscripts, and e-books exceeding 250,000 words without freezing.'
-                        }
-                      ].map((item, idx) => (
-                        <div key={idx} className="border border-slate-200 rounded-xl overflow-hidden">
-                          <button
-                            onClick={() => setOpenFaqIndex(openFaqIndex === idx ? null : idx)}
-                            className="w-full p-4 text-left font-semibold text-slate-900 text-xs flex items-center justify-between hover:bg-slate-50 transition-colors cursor-pointer"
-                          >
-                            <span className="text-[13px]">{item.q}</span>
-                            <span className="text-blue-600 font-mono text-sm ml-2 font-bold">
-                              {openFaqIndex === idx ? '−' : '+'}
-                            </span>
-                          </button>
-                          {openFaqIndex === idx && (
-                            <div className="px-4 pb-4 pt-1 text-xs text-slate-600 leading-relaxed border-t border-slate-100 bg-slate-50/50">
-                              {item.a}
-                            </div>
-                          )}
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                );
-
-              case 'cta':
-                return (
-                  <div key={sec.id} className="bg-gradient-to-r from-blue-700 via-blue-800 to-indigo-900 text-white rounded-2xl p-6 sm:p-8 flex flex-col sm:flex-row sm:items-center justify-between gap-6 shadow-md">
-                    <div className="space-y-1">
-                      <h3 className="text-xl font-bold">{sec.title || 'Bookmark this Free SEO Tool'}</h3>
-                      <p className="text-xs text-blue-100 max-w-lg">
-                        Add SmallSEOTools to your browser bookmarks for instant word count checks, keyword analysis, and search engine optimization.
-                      </p>
-                    </div>
-
-                    <div className="flex items-center gap-3 shrink-0">
-                      <button
-                        onClick={() => {
-                          if (navigator.clipboard) {
-                            navigator.clipboard.writeText(window.location.href);
-                            alert('Tool URL copied to clipboard!');
-                          }
-                        }}
-                        className="px-4 py-2 text-xs font-semibold text-slate-800 bg-white hover:bg-slate-100 rounded-xl cursor-pointer flex items-center gap-1.5 shadow-2xs transition-colors"
-                      >
-                        <Share2 className="w-3.5 h-3.5 text-blue-600" />
-                        <span>Share Tool</span>
-                      </button>
-
-                      <button
-                        onClick={() => setPublicRoute({ page: 'home' })}
-                        className="px-4 py-2 text-xs font-semibold text-white bg-blue-500 hover:bg-blue-400 rounded-xl cursor-pointer flex items-center gap-1.5 shadow-2xs transition-colors"
-                      >
-                        <span>More SEO Tools</span>
-                        <ArrowRight className="w-3.5 h-3.5" />
-                      </button>
-                    </div>
-                  </div>
-                );
-
-              default:
-                return null;
-            }
-          })}
+      {/* MAIN INTERACTIVE WORKSPACE */}
+      <div className="w-full">
+        {isTextCounter ? (
+          <TextCounterComponent tool={tool} />
+        ) : isPlagiarismChecker ? (
+          <PlagiarismCheckerComponent tool={tool} />
+        ) : isRewriter ? (
+          <ArticleRewriterComponent tool={tool} />
+        ) : isBacklinks ? (
+          <BacklinkCheckerComponent tool={tool} />
+        ) : isDomainAuthority ? (
+          <DomainAuthorityComponent tool={tool} />
+        ) : isRankTracker ? (
+          <KeywordRankTrackerComponent tool={tool} />
+        ) : isSitemapGen ? (
+          <XmlSitemapGeneratorComponent tool={tool} />
+        ) : isSerpPreview ? (
+          <SerpPreviewComponent tool={tool} />
+        ) : isKeywordDensity ? (
+          <KeywordDensityComponent tool={tool} />
+        ) : isCaseConverter ? (
+          <CaseConverterComponent tool={tool} />
+        ) : isHashGen ? (
+          <HashGeneratorComponent tool={tool} />
+        ) : (
+          <TextCounterComponent tool={tool} />
+        )}
       </div>
+
+      {/* COMPREHENSIVE 20-LAYER EDUCATIONAL GUIDE */}
+      <ToolGuideRenderer slugOrId={tool.slug || tool.id} setPublicRoute={setPublicRoute} />
     </div>
   );
 };
@@ -917,7 +689,7 @@ const BlogListing: React.FC = () => {
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-8 py-12 flex-1 w-full bg-[#f8fafc]">
       <div className="max-w-2xl mb-10">
-        <h1 className="text-3xl font-extrabold text-slate-900">SmallSEOTools Insights &amp; SEO Guides</h1>
+        <h1 className="text-3xl font-extrabold text-slate-900">SeoTools Insights &amp; SEO Guides</h1>
         <p className="text-sm text-slate-500 mt-2">
           Technical SEO audits, keyword optimization frameworks, and Core Web Vitals breakdowns from search engineering experts.
         </p>
@@ -998,7 +770,7 @@ const BlogPostReader: React.FC<{ post: any }> = ({ post }) => {
                 </div>
                 <div className="p-4 bg-slate-50 rounded-xl border border-slate-200 text-center space-y-2">
                   <p className="text-sm font-bold text-slate-900">Interactive SEO Module</p>
-                  <p className="text-xs text-slate-500">Any active tool from the SmallSEOTools directory can be embedded directly into tutorials using the /tool command.</p>
+                  <p className="text-xs text-slate-500">Any active tool from the SeoTools directory can be embedded directly into tutorials using the /tool command.</p>
                 </div>
               </div>
             );
@@ -1018,7 +790,7 @@ const PricingView: React.FC = () => {
     <div className="max-w-7xl mx-auto px-4 sm:px-8 py-16 flex-1 w-full bg-[#f8fafc]">
       <div className="text-center max-w-3xl mx-auto mb-14 space-y-3">
         <h1 className="text-3xl sm:text-4xl font-extrabold text-slate-900">Transparent Plans for Webmasters &amp; Agencies</h1>
-        <p className="text-sm text-slate-500">All SmallSEOTools utilities remain 100% free for individual users. Upgraded Pro &amp; Agency tiers provide bulk API quotas, ad-free experience, and multi-user seats.</p>
+        <p className="text-sm text-slate-500">All SeoTools utilities remain 100% free for individual users. Upgraded Pro &amp; Agency tiers provide bulk API quotas, ad-free experience, and multi-user seats.</p>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-6xl mx-auto">
@@ -1081,7 +853,7 @@ const StaticPageView: React.FC<{ page: any }> = ({ page }) => {
     <div className="max-w-4xl mx-auto px-4 sm:px-8 py-16 flex-1 w-full bg-[#f8fafc]">
       <h1 className="text-3xl font-extrabold text-slate-900 mb-4">{page.title}</h1>
       <div className="text-xs text-slate-400 mb-8 pb-4 border-b border-slate-200">
-        SmallSEOTools Legal &amp; Policies · Last updated: {page.updatedAt}
+        SeoTools Legal &amp; Policies · Last updated: {page.updatedAt}
       </div>
       <div className="prose max-w-none text-slate-700 leading-relaxed text-sm space-y-4">
         <p>{page.content}</p>

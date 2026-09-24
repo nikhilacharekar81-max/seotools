@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { ToolModule } from '../../types';
 import { 
   Key, 
@@ -6,8 +6,10 @@ import {
   Check, 
   ShieldCheck, 
   Lock, 
-  Sparkles,
-  RefreshCw
+  Sparkles, 
+  RefreshCw,
+  FileCode,
+  Shield
 } from 'lucide-react';
 
 interface HashGeneratorProps {
@@ -169,14 +171,30 @@ function md5(string: string): string {
     d = addUnsigned(d, DD);
   }
 
-  return (wordToHex(a) + wordToHex(b) + wordToHex(c) + wordToHex(d)).toLowerCase();
+  const temp = wordToHex(a) + wordToHex(b) + wordToHex(c) + wordToHex(d);
+  return temp.toLowerCase();
+}
+
+async function computeSha(text: string, algorithm: 'SHA-1' | 'SHA-256' | 'SHA-512'): Promise<string> {
+  const enc = new TextEncoder();
+  const data = enc.encode(text);
+  const hashBuffer = await crypto.subtle.digest(algorithm, data);
+  const hashArray = Array.from(new Uint8Array(hashBuffer));
+  return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
 }
 
 export const HashGeneratorComponent: React.FC<HashGeneratorProps> = ({ tool }) => {
-  const [input, setInput] = useState<string>('SmallSEOTools');
+  const [input, setInput] = useState<string>('SeoTools');
+  const [sha1Hash, setSha1Hash] = useState<string>('');
+  const [sha256Hash, setSha256Hash] = useState<string>('');
   const [copiedKey, setCopiedKey] = useState<string | null>(null);
 
   const md5Hash = md5(input);
+
+  useEffect(() => {
+    computeSha(input, 'SHA-1').then(setSha1Hash);
+    computeSha(input, 'SHA-256').then(setSha256Hash);
+  }, [input]);
 
   const handleCopy = (hashText: string, keyName: string) => {
     navigator.clipboard.writeText(hashText);
@@ -185,45 +203,84 @@ export const HashGeneratorComponent: React.FC<HashGeneratorProps> = ({ tool }) =
   };
 
   return (
-    <div className="w-full space-y-8">
-      <div className="bg-white rounded-2xl border border-slate-200 p-5 shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div className="space-y-1">
-          <h2 className="text-sm font-bold text-slate-900 flex items-center gap-2">
-            <Lock className="w-4 h-4 text-blue-600" />
-            <span>MD5 &amp; Cryptographic Hash Generator</span>
-          </h2>
-          <p className="text-xs text-slate-500">
-            Generate 128-bit cryptographic hash checksums for passwords, database keys, and file verification.
+    <div className="w-full space-y-10">
+      {/* Top Banner */}
+      <div className="bg-white rounded-2xl border border-slate-200 p-5 sm:p-6 shadow-xs flex flex-col lg:flex-row lg:items-center justify-between gap-5">
+        <div className="space-y-1.5">
+          <div className="flex items-center gap-2.5 flex-wrap">
+            <span className="text-[11px] font-bold tracking-wide uppercase px-2.5 py-0.5 rounded-full bg-blue-50 text-blue-700 border border-blue-200">
+              Cryptographic Checksum Engine
+            </span>
+            <span className="text-[11px] font-mono text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200 font-semibold">
+              Client-Side WebCrypto
+            </span>
+          </div>
+          <h1 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight">
+            MD5, SHA-1 &amp; SHA-256 Hash Generator
+          </h1>
+          <p className="text-xs sm:text-sm text-slate-500 max-w-2xl leading-relaxed">
+            Generate 128-bit MD5, 160-bit SHA-1, and 256-bit SHA-256 cryptographic digest hashes for checksum integrity and database verification.
           </p>
         </div>
       </div>
 
-      <div className="bg-white rounded-2xl border border-slate-200 p-6 shadow-xs space-y-5">
+      {/* Interactive Hash Workspace */}
+      <div className="bg-white rounded-2xl border border-slate-200 p-6 shadow-xs space-y-6">
         <div className="space-y-2">
           <label className="text-xs font-bold text-slate-700">Enter Plain String to Hash:</label>
           <input
             type="text"
             value={input}
             onChange={(e) => setInput(e.target.value)}
-            placeholder="Type string to generate cryptographic hash..."
-            className="w-full px-4 py-3 bg-slate-50 border border-slate-300 rounded-xl text-sm text-slate-800 focus:outline-hidden focus:border-blue-500 font-mono"
+            placeholder="Type string to generate cryptographic hashes..."
+            className="w-full px-4 py-3 bg-slate-50 border border-slate-300 rounded-xl text-sm text-slate-800 focus:outline-hidden focus:border-blue-500 font-mono focus:bg-white"
           />
         </div>
 
         {input && (
           <div className="space-y-4 pt-2">
             {/* MD5 */}
-            <div className="p-4 bg-slate-50 border border-slate-200 rounded-xl flex items-center justify-between gap-3">
+            <div className="p-4 bg-slate-50 border border-slate-200 rounded-xl flex flex-col sm:flex-row sm:items-center justify-between gap-3">
               <div className="space-y-0.5 overflow-hidden">
-                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">MD5 Checksum</span>
-                <span className="font-mono text-sm font-bold text-blue-600 block truncate">{md5Hash}</span>
+                <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block">MD5 Digest (128-bit)</span>
+                <span className="font-mono text-xs sm:text-sm font-bold text-blue-600 block break-all">{md5Hash}</span>
               </div>
               <button
                 onClick={() => handleCopy(md5Hash, 'md5')}
-                className="px-3 py-1.5 bg-white hover:bg-slate-100 text-slate-700 border border-slate-300 rounded-lg text-xs font-semibold cursor-pointer shrink-0 shadow-2xs flex items-center gap-1.5"
+                className="px-3 py-1.5 bg-white hover:bg-slate-100 text-slate-700 border border-slate-300 rounded-lg text-xs font-semibold cursor-pointer shrink-0 shadow-2xs flex items-center gap-1.5 self-start sm:self-auto"
               >
                 {copiedKey === 'md5' ? <Check className="w-3.5 h-3.5 text-emerald-600" /> : <Copy className="w-3.5 h-3.5" />}
                 <span>{copiedKey === 'md5' ? 'Copied' : 'Copy'}</span>
+              </button>
+            </div>
+
+            {/* SHA-1 */}
+            <div className="p-4 bg-slate-50 border border-slate-200 rounded-xl flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+              <div className="space-y-0.5 overflow-hidden">
+                <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block">SHA-1 Digest (160-bit)</span>
+                <span className="font-mono text-xs sm:text-sm font-bold text-indigo-600 block break-all">{sha1Hash}</span>
+              </div>
+              <button
+                onClick={() => handleCopy(sha1Hash, 'sha1')}
+                className="px-3 py-1.5 bg-white hover:bg-slate-100 text-slate-700 border border-slate-300 rounded-lg text-xs font-semibold cursor-pointer shrink-0 shadow-2xs flex items-center gap-1.5 self-start sm:self-auto"
+              >
+                {copiedKey === 'sha1' ? <Check className="w-3.5 h-3.5 text-emerald-600" /> : <Copy className="w-3.5 h-3.5" />}
+                <span>{copiedKey === 'sha1' ? 'Copied' : 'Copy'}</span>
+              </button>
+            </div>
+
+            {/* SHA-256 */}
+            <div className="p-4 bg-slate-50 border border-slate-200 rounded-xl flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+              <div className="space-y-0.5 overflow-hidden">
+                <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block">SHA-256 Digest (256-bit Security Standard)</span>
+                <span className="font-mono text-xs sm:text-sm font-bold text-emerald-700 block break-all">{sha256Hash}</span>
+              </div>
+              <button
+                onClick={() => handleCopy(sha256Hash, 'sha256')}
+                className="px-3 py-1.5 bg-white hover:bg-slate-100 text-slate-700 border border-slate-300 rounded-lg text-xs font-semibold cursor-pointer shrink-0 shadow-2xs flex items-center gap-1.5 self-start sm:self-auto"
+              >
+                {copiedKey === 'sha256' ? <Check className="w-3.5 h-3.5 text-emerald-600" /> : <Copy className="w-3.5 h-3.5" />}
+                <span>{copiedKey === 'sha256' ? 'Copied' : 'Copy'}</span>
               </button>
             </div>
           </div>

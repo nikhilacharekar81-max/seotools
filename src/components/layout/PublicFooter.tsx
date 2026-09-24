@@ -52,7 +52,7 @@ export const PublicFooter: React.FC = () => {
             </div>
             <div>
               <span className="text-base font-extrabold text-white tracking-tight block">
-                SmallSEO<span className="text-blue-400">Tools</span>
+                Seo<span className="text-blue-400">Tools</span>
               </span>
               <span className="text-[10px] uppercase tracking-wider text-emerald-400 font-semibold block">
                 100% Free SEO Toolkit
@@ -127,7 +127,7 @@ export const PublicFooter: React.FC = () => {
             </li>
             <li>
               <button onClick={() => setPublicRoute({ page: 'custom_page', param: 'about' })} className="hover:text-blue-400 transition-colors">
-                About SmallSEOTools Mission
+                About SeoTools Mission
               </button>
             </li>
             <li>
@@ -164,7 +164,7 @@ export const PublicFooter: React.FC = () => {
 
       {/* Copyright Bar */}
       <div className="max-w-7xl mx-auto px-4 sm:px-8 py-5 border-t border-slate-800 text-[11px] text-slate-500 flex flex-col sm:flex-row items-center justify-between gap-2">
-        <p>© 2026 SmallSEOTools. Professional Free Search Engine Optimization &amp; Webmaster Utilities.</p>
+        <p>© 2026 SeoTools. Professional Free Search Engine Optimization &amp; Webmaster Utilities.</p>
         <p className="text-slate-400">Fast · 100% Free · Client-Side Execution</p>
       </div>
     </footer>

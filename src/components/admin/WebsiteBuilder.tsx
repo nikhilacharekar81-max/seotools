@@ -27,7 +27,7 @@ export const WebsiteBuilder: React.FC = () => {
   // Homepage sections
   const [sections, setSections] = useState([
     { id: 'sec_hero', name: 'Hero Search & High-Impact Value Proposition', enabled: true },
-    { id: 'sec_cat', name: 'Category Filter Bar (SmallSEOTools Style)', enabled: true },
+    { id: 'sec_cat', name: 'Category Filter Bar (SeoTools Style)', enabled: true },
     { id: 'sec_grid', name: 'Modular Tool Grid Showcase', enabled: true },
     { id: 'sec_blog', name: 'Technical Articles & Guides Showcase', enabled: true },
     { id: 'sec_ad', name: 'Sponsored Leaderboard Ad Slot', enabled: true },
@@ -131,11 +131,11 @@ export const WebsiteBuilder: React.FC = () => {
                 </div>
               </div>
 
-              {/* SmallSEOTools Color System */}
+              {/* SeoTools Color System */}
               <div className="space-y-4 pt-4 border-t border-slate-100">
                 <h3 className="text-sm font-bold text-slate-900">Platform Color Palette</h3>
                 <p className="text-slate-500 text-[11px]">
-                  Configured with SmallSEOTools modern tech palette (Royal Blue, Emerald Green, and Amber).
+                  Configured with SeoTools modern tech palette (Royal Blue, Emerald Green, and Amber).
                 </p>
 
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">

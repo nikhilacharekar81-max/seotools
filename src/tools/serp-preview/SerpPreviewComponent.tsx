@@ -9,7 +9,11 @@ import {
   AlertTriangle, 
   Search, 
   Sparkles,
-  Code
+  Code,
+  Share2,
+  FileCode,
+  CheckCircle2,
+  Info
 } from 'lucide-react';
 
 interface SerpPreviewProps {
@@ -17,11 +21,11 @@ interface SerpPreviewProps {
 }
 
 export const SerpPreviewComponent: React.FC<SerpPreviewProps> = ({ tool }) => {
-  const [title, setTitle] = useState<string>('Free Plagiarism Checker – Detect Duplicate Content Online | SmallSEOTools');
+  const [title, setTitle] = useState<string>('Free Plagiarism Checker – Detect Duplicate Content Online | SeoTools');
   const [description, setDescription] = useState<string>(
     '100% Free online plagiarism detector with 1,000 words limit. Scan essays, articles, and blog posts with accurate percentage match indicators and AI detection.'
   );
-  const [url, setUrl] = useState<string>('https://smallseotools.com/plagiarism-checker');
+  const [url, setUrl] = useState<string>('https://seotools.com/plagiarism-checker');
   const [viewDevice, setViewDevice] = useState<'desktop' | 'mobile'>('desktop');
   const [copied, setCopied] = useState<boolean>(false);
 
@@ -56,24 +60,32 @@ export const SerpPreviewComponent: React.FC<SerpPreviewProps> = ({ tool }) => {
   };
 
   return (
-    <div className="w-full space-y-8">
+    <div className="w-full space-y-10">
       {/* Top Banner */}
-      <div className="bg-white rounded-2xl border border-slate-200 p-5 shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div className="space-y-1">
-          <h2 className="text-sm font-bold text-slate-900 flex items-center gap-2">
-            <Search className="w-4 h-4 text-blue-600" />
-            <span>Google SERP Preview &amp; Meta Snippet Simulator</span>
-          </h2>
-          <p className="text-xs text-slate-500">
-            Preview how your webpage title, description, and breadcrumbs appear in Google search results.
+      <div className="bg-white rounded-2xl border border-slate-200 p-5 sm:p-6 shadow-xs flex flex-col lg:flex-row lg:items-center justify-between gap-5">
+        <div className="space-y-1.5">
+          <div className="flex items-center gap-2.5 flex-wrap">
+            <span className="text-[11px] font-bold tracking-wide uppercase px-2.5 py-0.5 rounded-full bg-blue-50 text-blue-700 border border-blue-200">
+              SERP Snippet Simulator
+            </span>
+            <span className="text-[11px] font-mono text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200 font-semibold flex items-center gap-1">
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
+              Pixel-Perfect Precision
+            </span>
+          </div>
+          <h1 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight">
+            Google SERP Preview &amp; Meta Tag Studio
+          </h1>
+          <p className="text-xs sm:text-sm text-slate-500 max-w-2xl leading-relaxed">
+            Simulate how your webpage title, snippet description, and URL breadcrumb structure appear on Google search across desktop and mobile viewports.
           </p>
         </div>
 
-        <div className="flex items-center gap-1.5 bg-slate-100 p-1 rounded-xl text-xs font-semibold self-start sm:self-auto border border-slate-200">
+        <div className="flex items-center gap-1.5 bg-slate-100 p-1.5 rounded-xl text-xs font-semibold self-start lg:self-auto border border-slate-200">
           <button
             onClick={() => setViewDevice('desktop')}
-            className={`px-3 py-1.5 rounded-lg flex items-center gap-1.5 cursor-pointer transition-colors ${
-              viewDevice === 'desktop' ? 'bg-white text-blue-600 shadow-2xs font-bold' : 'text-slate-600 hover:text-slate-900'
+            className={`px-3.5 py-1.5 rounded-lg flex items-center gap-1.5 cursor-pointer transition-all ${
+              viewDevice === 'desktop' ? 'bg-white text-blue-600 shadow-xs font-bold' : 'text-slate-600 hover:text-slate-900'
             }`}
           >
             <Monitor className="w-3.5 h-3.5" />
@@ -81,8 +93,8 @@ export const SerpPreviewComponent: React.FC<SerpPreviewProps> = ({ tool }) => {
           </button>
           <button
             onClick={() => setViewDevice('mobile')}
-            className={`px-3 py-1.5 rounded-lg flex items-center gap-1.5 cursor-pointer transition-colors ${
-              viewDevice === 'mobile' ? 'bg-white text-blue-600 shadow-2xs font-bold' : 'text-slate-600 hover:text-slate-900'
+            className={`px-3.5 py-1.5 rounded-lg flex items-center gap-1.5 cursor-pointer transition-all ${
+              viewDevice === 'mobile' ? 'bg-white text-blue-600 shadow-xs font-bold' : 'text-slate-600 hover:text-slate-900'
             }`}
           >
             <Smartphone className="w-3.5 h-3.5" />
@@ -95,15 +107,16 @@ export const SerpPreviewComponent: React.FC<SerpPreviewProps> = ({ tool }) => {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Editor Inputs */}
         <div className="bg-white rounded-2xl border border-slate-200 p-6 shadow-xs space-y-5">
-          <h3 className="text-sm font-bold text-slate-900 border-b border-slate-100 pb-3">
-            Meta Content Settings
-          </h3>
+          <h2 className="text-sm font-bold text-slate-900 border-b border-slate-100 pb-3 flex items-center justify-between">
+            <span>Meta Content Settings</span>
+            <span className="text-xs font-normal text-slate-400">Live Sync</span>
+          </h2>
 
           {/* Title input */}
           <div className="space-y-1.5">
             <div className="flex items-center justify-between text-xs">
-              <label className="font-semibold text-slate-700">SEO Page Title</label>
-              <span className={`font-mono font-bold ${isTitleOver ? 'text-rose-600' : 'text-slate-500'}`}>
+              <label className="font-bold text-slate-700">SEO Page Title Tag</label>
+              <span className={`font-mono font-bold ${isTitleOver ? 'text-rose-600' : 'text-emerald-700'}`}>
                 {titleChars} / 60 characters
               </span>
             </div>
@@ -111,11 +124,11 @@ export const SerpPreviewComponent: React.FC<SerpPreviewProps> = ({ tool }) => {
               type="text"
               value={title}
               onChange={(e) => setTitle(e.target.value)}
-              className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-sm text-slate-800 focus:outline-hidden focus:border-blue-500"
+              className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-sm text-slate-800 focus:outline-hidden focus:border-blue-500 focus:bg-white"
             />
             {isTitleOver && (
-              <p className="text-[11px] text-rose-600 flex items-center gap-1">
-                <AlertTriangle className="w-3 h-3" />
+              <p className="text-[11px] text-rose-600 flex items-center gap-1 font-medium">
+                <AlertTriangle className="w-3 h-3 shrink-0" />
                 <span>Title exceeds 60 characters and may be truncated by Google with an ellipsis (...).</span>
               </p>
             )}
@@ -124,97 +137,90 @@ export const SerpPreviewComponent: React.FC<SerpPreviewProps> = ({ tool }) => {
           {/* Description input */}
           <div className="space-y-1.5">
             <div className="flex items-center justify-between text-xs">
-              <label className="font-semibold text-slate-700">Meta Description</label>
-              <span className={`font-mono font-bold ${isDescOver ? 'text-rose-600' : 'text-slate-500'}`}>
+              <label className="font-bold text-slate-700">Meta Description</label>
+              <span className={`font-mono font-bold ${isDescOver ? 'text-rose-600' : 'text-emerald-700'}`}>
                 {descChars} / 160 characters
               </span>
             </div>
             <textarea
+              rows={3}
               value={description}
               onChange={(e) => setDescription(e.target.value)}
-              rows={4}
-              className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-sm text-slate-800 focus:outline-hidden focus:border-blue-500 resize-none leading-relaxed"
+              className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-sm text-slate-800 focus:outline-hidden focus:border-blue-500 focus:bg-white resize-none"
             />
             {isDescOver && (
-              <p className="text-[11px] text-rose-600 flex items-center gap-1">
-                <AlertTriangle className="w-3 h-3" />
+              <p className="text-[11px] text-rose-600 flex items-center gap-1 font-medium">
+                <AlertTriangle className="w-3 h-3 shrink-0" />
                 <span>Description exceeds 160 characters and will likely be cut off in search snippets.</span>
               </p>
             )}
           </div>
 
-          {/* Canonical URL input */}
+          {/* URL input */}
           <div className="space-y-1.5">
-            <label className="font-semibold text-slate-700 text-xs block">Canonical URL</label>
+            <label className="text-xs font-bold text-slate-700">Canonical Target URL</label>
             <input
-              type="url"
+              type="text"
               value={url}
               onChange={(e) => setUrl(e.target.value)}
-              className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-sm text-slate-800 focus:outline-hidden focus:border-blue-500"
+              className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-sm text-slate-800 focus:outline-hidden focus:border-blue-500 focus:bg-white"
             />
           </div>
         </div>
 
-        {/* Live Search Engine Simulator */}
-        <div className="space-y-6">
-          <div className="bg-white rounded-2xl border border-slate-200 p-6 shadow-xs space-y-4">
+        {/* Live SERP Preview */}
+        <div className="bg-white rounded-2xl border border-slate-200 p-6 shadow-xs flex flex-col justify-between space-y-6">
+          <div className="space-y-4">
             <div className="flex items-center justify-between border-b border-slate-100 pb-3">
-              <h3 className="text-sm font-bold text-slate-900 flex items-center gap-2">
-                <span>Google Search Result Snippet</span>
-                <span className="text-[10px] uppercase font-mono bg-slate-100 text-slate-600 px-2 py-0.5 rounded">
-                  {viewDevice}
-                </span>
-              </h3>
+              <span className="text-xs font-bold text-slate-900 uppercase tracking-wider">
+                Google Search Result Preview ({viewDevice})
+              </span>
+              <span className="text-[10px] text-slate-400 font-mono">Google Web Search Simulation</span>
             </div>
 
-            {/* Google SERP Simulated Card */}
-            <div className={`p-4 bg-[#f8f9fa] rounded-xl border border-slate-200 font-sans ${
+            {/* Google SERP Card */}
+            <div className={`p-4 bg-white rounded-xl border border-slate-200/80 shadow-2xs space-y-1.5 ${
               viewDevice === 'mobile' ? 'max-w-sm mx-auto' : 'w-full'
             }`}>
-              {/* URL / Breadcrumb */}
-              <div className="flex items-center gap-2 mb-1">
-                <div className="w-6 h-6 rounded-full bg-slate-200 flex items-center justify-center text-[10px] text-slate-600 font-bold">
-                  G
+              {/* URL Breadcrumb */}
+              <div className="flex items-center gap-1.5 text-xs text-slate-700 truncate">
+                <div className="w-4 h-4 rounded-full bg-slate-100 flex items-center justify-center text-[10px] text-slate-600 shrink-0">
+                  <Globe className="w-3 h-3" />
                 </div>
-                <div className="text-xs leading-tight">
-                  <span className="text-slate-800 font-semibold block truncate max-w-xs">
-                    {url.replace(/^https?:\/\//, '').split('/')[0]}
-                  </span>
-                  <span className="text-slate-500 text-[11px] block truncate max-w-xs font-mono">
-                    {url}
-                  </span>
+                <div className="flex flex-col">
+                  <span className="text-[12px] font-medium text-slate-800 leading-tight">SeoTools</span>
+                  <span className="text-[10px] text-slate-500 truncate leading-tight">{url}</span>
                 </div>
               </div>
 
               {/* Title */}
-              <h4 className="text-base sm:text-lg font-medium text-[#1a0dab] hover:underline cursor-pointer leading-snug line-clamp-2">
-                {title || 'Untitled Page'}
-              </h4>
+              <h3 className="text-base sm:text-lg font-medium text-[#1a0dab] hover:underline cursor-pointer leading-snug break-words">
+                {title.length > 60 ? `${title.substring(0, 58)}...` : title}
+              </h3>
 
-              {/* Description */}
-              <p className="text-xs text-[#4d5156] mt-1 leading-relaxed line-clamp-3">
-                {description || 'No description provided. Search engines will automatically grab text from your page.'}
+              {/* Snippet */}
+              <p className="text-xs sm:text-sm text-[#4d5156] leading-relaxed break-words">
+                {description.length > 160 ? `${description.substring(0, 157)}...` : description}
               </p>
             </div>
           </div>
 
-          {/* HTML Code Output */}
-          <div className="bg-slate-900 rounded-2xl p-5 text-slate-200 space-y-3 shadow-xs">
-            <div className="flex items-center justify-between border-b border-slate-800 pb-3">
-              <div className="flex items-center gap-2 text-xs font-mono font-bold text-blue-400">
-                <Code className="w-4 h-4" />
-                <span>Generated HTML &amp; OpenGraph Tags</span>
-              </div>
+          {/* Generated Code Section */}
+          <div className="space-y-2 pt-2 border-t border-slate-100">
+            <div className="flex items-center justify-between text-xs">
+              <span className="font-bold text-slate-700 flex items-center gap-1.5">
+                <Code className="w-3.5 h-3.5 text-blue-600" />
+                <span>Production Meta Tag Bundle</span>
+              </span>
               <button
                 onClick={handleCopy}
-                className="px-3 py-1 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-lg text-xs font-medium flex items-center gap-1.5 cursor-pointer transition-colors"
+                className="text-xs font-bold text-blue-600 hover:text-blue-800 flex items-center gap-1 cursor-pointer"
               >
-                {copied ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5 text-slate-400" />}
-                <span>{copied ? 'Copied!' : 'Copy Code'}</span>
+                {copied ? <Check className="w-3.5 h-3.5 text-emerald-600" /> : <Copy className="w-3.5 h-3.5" />}
+                <span>{copied ? 'HTML Copied!' : 'Copy Tags'}</span>
               </button>
             </div>
-
-            <pre className="text-xs font-mono overflow-x-auto text-slate-300 p-2 leading-relaxed">
+            <pre className="bg-slate-900 text-slate-300 p-3 rounded-xl font-mono text-[11px] overflow-x-auto leading-relaxed border border-slate-800 max-h-36">
               {htmlTags}
             </pre>
           </div>

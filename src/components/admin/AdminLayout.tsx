@@ -100,7 +100,7 @@ export const AdminLayout: React.FC<{ children: React.ReactNode }> = ({ children 
               {isSidebarOpen && (
                 <div className="leading-tight truncate">
                   <span className="font-bold text-sm text-slate-900 block truncate">
-                    SmallSEOTools
+                    SeoTools
                   </span>
                   <span className="text-[10px] text-blue-600 font-semibold block">
                     Webmaster Console

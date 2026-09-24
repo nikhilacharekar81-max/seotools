@@ -22,7 +22,7 @@ export const TEXT_COUNTER_MANIFEST: Omit<ToolModule, 'isInstalled' | 'installedA
   seo: {
     title: 'Word Counter & Text Analyzer – 100% Free Online Character Counter',
     metaDescription: 'Free online word counter, character counter, and keyword density analyzer. Check word count, sentences, paragraphs, reading speed, and SEO readability.',
-    canonicalUrl: 'https://smallseotools.com/text-counter',
+    canonicalUrl: 'https://seotools.com/tools/text-counter',
     indexInSearch: true,
     includeInSitemap: true,
     keywords: ['word counter', 'character counter', 'count words online', 'keyword density checker', 'reading time calculator', 'seo text counter'],

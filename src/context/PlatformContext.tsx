@@ -13,48 +13,12 @@ import {
   Role,
 } from '../types';
 import { TEXT_COUNTER_MANIFEST } from '../tools/text-counter/manifest';
+import { PLAGIARISM_CHECKER_MANIFEST } from '../tools/plagiarism-checker/manifest';
 
-// Pre-defined modular tool catalog matching SmallSEOTools categories
+// Pre-defined modular tool catalog matching SeoTools categories
 export const TOOL_CATALOG: Omit<ToolModule, 'isInstalled' | 'installedAt'>[] = [
   TEXT_COUNTER_MANIFEST,
-  {
-    id: 'tool_plagiarism',
-    slug: 'plagiarism-checker',
-    name: 'Plagiarism Checker',
-    description: 'Check text originality against millions of online sources with percentage similarity reports.',
-    category: 'Text Analysis Tools',
-    iconName: 'Shield',
-    status: 'published',
-    processingMode: 'hybrid',
-    version: '2.1.0',
-    tags: ['plagiarism', 'originality', 'content audit', 'seo content', 'duplicate content'],
-    limits: {
-      guest: { allowed: true, maxRunsPerDay: 5, maxPayloadSize: '1,000 words' },
-      registered: { allowed: true, maxRunsPerDay: 20, maxPayloadSize: '2,500 words' },
-      pro: { allowed: true, maxRunsPerDay: 500, maxPayloadSize: '10,000 words' },
-      business: { allowed: true, maxRunsPerDay: 2000, maxPayloadSize: '25,000 words' },
-    },
-    seo: {
-      title: 'Free Plagiarism Checker – Detect Duplicate Content Online',
-      metaDescription: '100% Free online plagiarism detector. Scan essays, articles, and blog posts with accurate percentage match indicators.',
-      canonicalUrl: 'https://smallseotools.com/tools/plagiarism-checker',
-      indexInSearch: true,
-      includeInSitemap: true,
-      keywords: ['plagiarism checker', 'check plagiarism free', 'duplicate content detector', 'originality score'],
-    },
-    configSchema: [
-      { id: 'maxWordScan', label: 'Max Words per Single Scan', type: 'number', defaultValue: 1000, value: 1000 },
-      { id: 'strictness', label: 'Strictness Matching Sensitivity', type: 'select', defaultValue: 'high', value: 'high', options: [{ label: 'Normal', value: 'normal' }, { label: 'High', value: 'high' }] },
-    ],
-    pageSections: [
-      { id: 'sec_hero', type: 'hero', title: 'Free Online Plagiarism Checker', enabled: true },
-      { id: 'sec_tool', type: 'tool', title: 'Plagiarism Analysis Terminal', enabled: true },
-      { id: 'sec_desc', type: 'description', title: 'How It Works', enabled: true, content: 'Scans your sentences against web indices to highlight verbatim matches and ensure search engine originality.' },
-    ],
-    versions: [{ version: '2.1.0', releaseDate: '2026-02-10', author: 'SEO Core Team', changelog: 'Enhanced indexing algorithm.', isCurrent: true }],
-    activityLogs: [],
-    metrics: { totalRuns: 42100, successRate: 99.8, avgLatencyMs: 320, uniqueUsers: 18400, errorCount: 12 },
-  },
+  PLAGIARISM_CHECKER_MANIFEST,
   {
     id: 'tool_rewriter',
     slug: 'article-rewriter',
@@ -75,7 +39,7 @@ export const TOOL_CATALOG: Omit<ToolModule, 'isInstalled' | 'installedAt'>[] = [
     seo: {
       title: 'Free Article Rewriter – Paraphrase Content Online',
       metaDescription: 'Rewrite articles, blogs, and essays with intelligent synonyms while preserving SEO clarity.',
-      canonicalUrl: 'https://smallseotools.com/tools/article-rewriter',
+      canonicalUrl: 'https://seotools.com/tools/article-rewriter',
       indexInSearch: true,
       includeInSitemap: true,
       keywords: ['article rewriter', 'paraphrase tool', 'rewrite article online', 'sentence spinner'],
@@ -111,7 +75,7 @@ export const TOOL_CATALOG: Omit<ToolModule, 'isInstalled' | 'installedAt'>[] = [
     seo: {
       title: 'Free Keyword Density Checker – SEO Analysis Tool',
       metaDescription: 'Analyze your page or text keyword density to prevent Google search penalty and maximize ranking potential.',
-      canonicalUrl: 'https://smallseotools.com/tools/keyword-density-checker',
+      canonicalUrl: 'https://seotools.com/tools/keyword-density-checker',
       indexInSearch: true,
       includeInSitemap: true,
       keywords: ['keyword density checker', 'keyword frequency analyzer', 'seo keyword ratio'],
@@ -148,7 +112,7 @@ export const TOOL_CATALOG: Omit<ToolModule, 'isInstalled' | 'installedAt'>[] = [
     seo: {
       title: 'Free SEO Meta Tag Generator | Google & Social Preview Tool',
       metaDescription: 'Generate valid HTML meta tags with live Google snippet & social card previews.',
-      canonicalUrl: 'https://smallseotools.com/tools/meta-tag-generator',
+      canonicalUrl: 'https://seotools.com/tools/meta-tag-generator',
       indexInSearch: true,
       includeInSitemap: true,
       keywords: ['meta tag generator', 'seo title tags', 'opengraph generator', 'serp simulator'],
@@ -187,7 +151,7 @@ export const TOOL_CATALOG: Omit<ToolModule, 'isInstalled' | 'installedAt'>[] = [
     seo: {
       title: 'Free XML Sitemap Generator – Create Sitemap for Google',
       metaDescription: 'Generate compliant XML sitemaps instantly for Google, Bing, and Yahoo search engines.',
-      canonicalUrl: 'https://smallseotools.com/tools/xml-sitemap-generator',
+      canonicalUrl: 'https://seotools.com/tools/xml-sitemap-generator',
       indexInSearch: true,
       includeInSitemap: true,
       keywords: ['xml sitemap generator', 'create sitemap online', 'google sitemap creator'],
@@ -223,7 +187,7 @@ export const TOOL_CATALOG: Omit<ToolModule, 'isInstalled' | 'installedAt'>[] = [
     seo: {
       title: 'Free Robots.txt Generator – Guide Search Engine Crawlers',
       metaDescription: 'Generate and validate your robots.txt file to guide Googlebot, Bingbot, and other web crawlers.',
-      canonicalUrl: 'https://smallseotools.com/tools/robots-txt-generator',
+      canonicalUrl: 'https://seotools.com/tools/robots-txt-generator',
       indexInSearch: true,
       includeInSitemap: true,
       keywords: ['robots.txt generator', 'robots txt creator', 'disallow googlebot'],
@@ -257,7 +221,7 @@ export const TOOL_CATALOG: Omit<ToolModule, 'isInstalled' | 'installedAt'>[] = [
     seo: {
       title: 'Free Backlink Checker – In-Depth Inbound Link Analysis',
       metaDescription: 'Analyze any URL or domain backlinks for free. Check anchor text, referring domains, and spam score.',
-      canonicalUrl: 'https://smallseotools.com/tools/backlink-checker',
+      canonicalUrl: 'https://seotools.com/tools/backlink-checker',
       indexInSearch: true,
       includeInSitemap: true,
       keywords: ['backlink checker', 'free backlink tool', 'check incoming links', 'link profile audit'],
@@ -291,7 +255,7 @@ export const TOOL_CATALOG: Omit<ToolModule, 'isInstalled' | 'installedAt'>[] = [
     seo: {
       title: 'Free Domain Authority Checker – Check Bulk DA & PA',
       metaDescription: 'Check Moz DA (Domain Authority) and PA (Page Authority) for any website for free.',
-      canonicalUrl: 'https://smallseotools.com/tools/domain-authority-checker',
+      canonicalUrl: 'https://seotools.com/tools/domain-authority-checker',
       indexInSearch: true,
       includeInSitemap: true,
       keywords: ['domain authority checker', 'da pa checker', 'bulk da checker', 'website rank score'],
@@ -325,7 +289,7 @@ export const TOOL_CATALOG: Omit<ToolModule, 'isInstalled' | 'installedAt'>[] = [
     seo: {
       title: 'Free Keyword Rank Tracker – Check Google SERP Position',
       metaDescription: 'Track your keyword ranking on Google for your target domain across global and local search locations.',
-      canonicalUrl: 'https://smallseotools.com/tools/keyword-rank-tracker',
+      canonicalUrl: 'https://seotools.com/tools/keyword-rank-tracker',
       indexInSearch: true,
       includeInSitemap: true,
       keywords: ['keyword rank tracker', 'google ranking checker', 'check keyword position'],
@@ -359,7 +323,7 @@ export const TOOL_CATALOG: Omit<ToolModule, 'isInstalled' | 'installedAt'>[] = [
     seo: {
       title: 'Free Whois Lookup – Domain Information & Expiry Tool',
       metaDescription: 'Inspect domain name ownership, registrar info, creation and expiration dates.',
-      canonicalUrl: 'https://smallseotools.com/tools/whois-lookup',
+      canonicalUrl: 'https://seotools.com/tools/whois-lookup',
       indexInSearch: true,
       includeInSitemap: true,
       keywords: ['whois lookup', 'domain age checker', 'check whois online'],
@@ -395,7 +359,7 @@ export const TOOL_CATALOG: Omit<ToolModule, 'isInstalled' | 'installedAt'>[] = [
     seo: {
       title: 'Free Online Image Compressor | Compress PNG, JPG, WebP Online',
       metaDescription: 'Reduce image file size without losing quality. Fast online image compression tool.',
-      canonicalUrl: 'https://smallseotools.com/tools/image-compressor',
+      canonicalUrl: 'https://seotools.com/tools/image-compressor',
       indexInSearch: true,
       includeInSitemap: true,
       keywords: ['image compressor', 'compress jpg', 'reduce png size', 'webp converter'],
@@ -439,7 +403,7 @@ export const TOOL_CATALOG: Omit<ToolModule, 'isInstalled' | 'installedAt'>[] = [
     seo: {
       title: 'Online Hash Generator | MD5, SHA-256, SHA-512 Checksum Tool',
       metaDescription: 'Compute secure cryptographic hashes instantly with zero latency.',
-      canonicalUrl: 'https://smallseotools.com/tools/hash-generator',
+      canonicalUrl: 'https://seotools.com/tools/hash-generator',
       indexInSearch: true,
       includeInSitemap: true,
       keywords: ['sha256 generator', 'md5 hash', 'checksum online', 'web crypto'],
@@ -605,12 +569,22 @@ export const PlatformProvider: React.FC<{ children: React.ReactNode }> = ({ chil
                 seo: TEXT_COUNTER_MANIFEST.seo,
               };
             }
+            if (t.id === PLAGIARISM_CHECKER_MANIFEST.id || t.slug === 'plagiarism-checker') {
+              return {
+                ...t,
+                name: PLAGIARISM_CHECKER_MANIFEST.name,
+                category: PLAGIARISM_CHECKER_MANIFEST.category,
+                description: PLAGIARISM_CHECKER_MANIFEST.description,
+                pageSections: PLAGIARISM_CHECKER_MANIFEST.pageSections,
+                seo: PLAGIARISM_CHECKER_MANIFEST.seo,
+              };
+            }
             return t;
           });
         }
       } catch (e) { /* fallback */ }
     }
-    // Default SmallSEOTools Suite
+    // Default SeoTools Suite
     return TOOL_CATALOG.map(tool => ({
       ...tool,
       isInstalled: true,
@@ -629,20 +603,28 @@ export const PlatformProvider: React.FC<{ children: React.ReactNode }> = ({ chil
 
   const [catalog] = useState(TOOL_CATALOG);
 
-  // Settings: SmallSEOTools modern tech palette
+  // Settings: SeoTools modern tech palette
   const [settings, setSettings] = useState<SiteSettings>(() => {
     const saved = localStorage.getItem('omni_settings');
     if (saved) {
-      try { return JSON.parse(saved); } catch (e) { /* fallback */ }
+      try {
+        const parsed = JSON.parse(saved);
+        return {
+          ...parsed,
+          siteName: 'SeoTools - 100% Free Online SEO & Webmaster Toolkit',
+          logoText: 'SeoTools',
+          footerText: '© 2026 SeoTools. Professional Free Search Engine Optimization & Webmaster Utilities.',
+        };
+      } catch (e) { /* fallback */ }
     }
     return {
-      siteName: 'SmallSEOTools - 100% Free Online SEO & Webmaster Toolkit',
+      siteName: 'SeoTools - 100% Free Online SEO & Webmaster Toolkit',
       tagline: 'Professional SEO Tools, Content Optimization, Backlink Analyzers & Web Utilities',
       primaryColor: '#1d4ed8', // Royal Blue
       accentColor: '#10b981',  // Emerald Green
       goldColor: '#f59e0b',    // Amber
-      logoText: 'SmallSEOTools',
-      footerText: '© 2026 SmallSEOTools. Professional Free Search Engine Optimization & Webmaster Utilities.',
+      logoText: 'SeoTools',
+      footerText: '© 2026 SeoTools. Professional Free Search Engine Optimization & Webmaster Utilities.',
       maintenanceMode: false,
       registrationOpen: true,
       cacheTtlSeconds: 86400,
@@ -654,7 +636,7 @@ export const PlatformProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   const [currentUser] = useState<User>({
     id: 'usr_super_1',
     name: 'David Reynolds',
-    email: 'david@smallseotools.com',
+    email: 'david@seotools.com',
     role: 'owner',
     plan: 'business',
     status: 'active',
@@ -668,7 +650,7 @@ export const PlatformProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     {
       id: 'usr_super_1',
       name: 'David Reynolds',
-      email: 'david@smallseotools.com',
+      email: 'david@seotools.com',
       role: 'owner',
       plan: 'business',
       status: 'active',
@@ -777,22 +759,22 @@ export const PlatformProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   const [pages, setPages] = useState<StaticPage[]>([
     {
       id: 'page_about',
-      title: 'About SmallSEOTools',
+      title: 'About SeoTools',
       slug: 'about',
       status: 'published',
-      content: 'SmallSEOTools is a premier online search engine optimization and webmaster toolkit engineered to empower digital marketers, webmasters, SEO agencies, and content writers with fast, accurate, and 100% free digital utilities.',
+      content: 'SeoTools is a premier online search engine optimization and webmaster toolkit engineered to empower digital marketers, webmasters, SEO agencies, and content writers with fast, accurate, and 100% free digital utilities.',
       updatedAt: '2026-03-24',
-      seoTitle: 'About SmallSEOTools | Free SEO & Webmaster Toolkit',
-      seoDescription: 'Learn about SmallSEOTools, our high-speed free SEO utilities, and our mission to simplify search optimization.',
+      seoTitle: 'About SeoTools | Free SEO & Webmaster Toolkit',
+      seoDescription: 'Learn about SeoTools, our high-speed free SEO utilities, and our mission to simplify search optimization.',
     },
     {
       id: 'page_privacy',
       title: 'Privacy & Confidentiality Guarantee',
       slug: 'privacy',
       status: 'published',
-      content: '100% Confidentiality: All text, keywords, and files processed through SmallSEOTools run instantaneously via client-side workers or secure memory-only pipelines. We never store, log, sell, or inspect user content.',
+      content: '100% Confidentiality: All text, keywords, and files processed through SeoTools run instantaneously via client-side workers or secure memory-only pipelines. We never store, log, sell, or inspect user content.',
       updatedAt: '2026-03-24',
-      seoTitle: 'Privacy Policy | SmallSEOTools',
+      seoTitle: 'Privacy Policy | SeoTools',
       seoDescription: 'Our commitment to zero data logging and complete confidentiality for your SEO content.',
     },
     {
@@ -800,9 +782,9 @@ export const PlatformProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       title: 'Terms of Service',
       slug: 'terms',
       status: 'published',
-      content: 'By accessing SmallSEOTools online utilities or developer APIs, you agree to fair use guidelines and rate-limiting policies designed to keep the platform free and accessible to all webmasters.',
+      content: 'By accessing SeoTools online utilities or developer APIs, you agree to fair use guidelines and rate-limiting policies designed to keep the platform free and accessible to all webmasters.',
       updatedAt: '2026-03-24',
-      seoTitle: 'Terms of Service | SmallSEOTools',
+      seoTitle: 'Terms of Service | SeoTools',
       seoDescription: 'Terms of service, fair use guidelines, and API licensing terms.',
     },
   ]);

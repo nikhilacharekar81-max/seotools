@@ -61,7 +61,7 @@ export const ToolBuilder: React.FC = () => {
       <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-xs">
         <div className="flex items-center gap-2">
           <span className="text-xs font-semibold uppercase tracking-wider text-blue-600">
-            SmallSEOTools Modular Platform
+            SeoTools Modular Platform
           </span>
         </div>
         <h1 className="text-2xl font-bold text-slate-900">Register New SEO Tool</h1>

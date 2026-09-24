@@ -68,10 +68,8 @@ export const ToolRegistry: React.FC = () => {
   };
 
   const handleBulkUninstall = () => {
-    if (confirm(`Uninstall ${selectedToolIds.length} tools from active registry?`)) {
-      selectedToolIds.forEach(id => uninstallTool(id));
-      setSelectedToolIds([]);
-    }
+    selectedToolIds.forEach(id => uninstallTool(id));
+    setSelectedToolIds([]);
   };
 
   return (
@@ -81,7 +79,7 @@ export const ToolRegistry: React.FC = () => {
         <div>
           <div className="flex items-center gap-2">
             <span className="text-xs font-semibold uppercase tracking-wider text-blue-600">
-              SmallSEOTools Modular Platform
+              SeoTools Modular Platform
             </span>
           </div>
           <h1 className="text-2xl font-bold text-slate-900">SEO Tool Registry</h1>

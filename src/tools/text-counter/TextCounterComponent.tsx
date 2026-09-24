@@ -70,7 +70,7 @@ export const TextCounterComponent: React.FC<TextCounterComponentProps> = ({ tool
     }
   }, [text, tool.slug]);
 
-  // Real-time Keyword Density Engine for SEO (Signature SmallSEOTools feature!)
+  // Real-time Keyword Density Engine for SEO (Signature SeoTools feature!)
   const keywordDensity = useMemo(() => {
     if (!text.trim()) return { singleWords: [], doubleWords: [] };
     const cleanTokens = text
@@ -134,7 +134,7 @@ export const TextCounterComponent: React.FC<TextCounterComponentProps> = ({ tool
 
 When drafting SEO blog posts or landing pages, webmasters typically target an average content length between 1,500 and 2,500 words to answer user queries thoroughly. Simultaneously, keeping key search phrases between 1% and 2.5% density prevents keyword stuffing penalties from Google algorithms.
 
-SmallSEOTools provides instantaneous, client-side linguistic analysis. By verifying sentence structures, character limits for meta titles (under 60 chars) and meta descriptions (under 160 chars), digital marketers can optimize on-page performance before publishing!`;
+SeoTools provides instantaneous, client-side linguistic analysis. By verifying sentence structures, character limits for meta titles (under 60 chars) and meta descriptions (under 160 chars), digital marketers can optimize on-page performance before publishing!`;
     setText(sample);
   };
 
@@ -197,7 +197,7 @@ SmallSEOTools provides instantaneous, client-side linguistic analysis. By verify
 
   return (
     <div className="space-y-6">
-      {/* SmallSEOTools Privacy & Security Banner */}
+      {/* SeoTools Privacy & Security Banner */}
       <div className="bg-emerald-50 border border-emerald-200 rounded-xl p-3.5 flex flex-wrap items-center justify-between gap-3 text-xs">
         <div className="flex items-center gap-2.5 text-emerald-900">
           <div className="w-8 h-8 rounded-lg bg-emerald-600 text-white flex items-center justify-center shrink-0 shadow-xs">
@@ -217,7 +217,7 @@ SmallSEOTools provides instantaneous, client-side linguistic analysis. By verify
         </div>
       </div>
 
-      {/* Primary SmallSEOTools Counter Metric Cards */}
+      {/* Primary SeoTools Counter Metric Cards */}
       <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-3">
         {showWords && (
           <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-xs hover:border-blue-500 transition-colors">
@@ -364,7 +364,7 @@ SmallSEOTools provides instantaneous, client-side linguistic analysis. By verify
 
               <div className="h-4 w-px bg-slate-300 mx-1 hidden sm:block"></div>
 
-              {/* Case Modifiers (SmallSEOTools signature) */}
+              {/* Case Modifiers (SeoTools signature) */}
               <button
                 onClick={() => handleCaseChange('upper')}
                 className="px-2 py-1.5 bg-white border border-slate-200 hover:bg-slate-100 text-slate-700 rounded-lg font-medium cursor-pointer transition-colors text-[11px]"
@@ -448,7 +448,7 @@ SmallSEOTools provides instantaneous, client-side linguistic analysis. By verify
           </div>
         </div>
       ) : (
-        /* SEO Keyword Density Table (SmallSEOTools hallmark feature!) */
+        /* SEO Keyword Density Table (SeoTools hallmark feature!) */
         <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-5 space-y-5">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
             <div>
@@ -543,35 +543,6 @@ SmallSEOTools provides instantaneous, client-side linguistic analysis. By verify
           )}
         </div>
       )}
-
-      {/* Counting Rules Drawer */}
-      <div className="bg-white rounded-xl border border-slate-200 overflow-hidden text-xs">
-        <button
-          onClick={() => setShowRules(!showRules)}
-          className="w-full px-5 py-3.5 flex items-center justify-between text-left hover:bg-slate-50 transition-colors cursor-pointer"
-        >
-          <div className="flex items-center gap-2 text-slate-800 font-semibold">
-            <Zap className="w-4 h-4 text-blue-600" />
-            <span>Deterministic Word &amp; Character Counting Standards</span>
-          </div>
-          {showRules ? <ChevronUp className="w-4 h-4 text-slate-400" /> : <ChevronDown className="w-4 h-4 text-slate-400" />}
-        </button>
-
-        {showRules && (
-          <div className="p-5 border-t border-slate-200 bg-slate-50 space-y-3 text-slate-600 font-sans leading-relaxed">
-            <p>
-              SmallSEOTools uses deterministic parsing algorithms to deliver reliable metrics for webmasters, SEO copywriters, and developers:
-            </p>
-            <ul className="list-disc pl-5 space-y-1.5 font-mono text-[11px]">
-              <li><strong className="text-slate-900 font-sans">Words:</strong> Counted by tokenizing across whitespace boundaries (<code className="bg-slate-200 px-1 py-0.5 rounded text-slate-800">\s+</code>). CJK characters (Chinese, Japanese, Korean) are counted individually according to international SEO norms.</li>
-              <li><strong className="text-slate-900 font-sans">Characters:</strong> Total code point string length. Emojis, UTF-16 surrogate pairs, and special symbols are measured correctly.</li>
-              <li><strong className="text-slate-900 font-sans">Sentences:</strong> Segmented using sentence-terminating punctuation (<code className="bg-slate-200 px-1 py-0.5 rounded text-slate-800">. ! ? 。 ！？</code>). Decimal numbers (e.g., 3.14) and abbreviations do not falsely split sentences.</li>
-              <li><strong className="text-slate-900 font-sans">Paragraphs:</strong> Discrete non-empty content blocks separated by double line breaks (<code className="bg-slate-200 px-1 py-0.5 rounded text-slate-800">\n\n</code>).</li>
-              <li><strong className="text-slate-900 font-sans">Reading &amp; Speaking Times:</strong> Evaluated using the standard reading baseline ({readingSpeedWpm} WPM silent reading, {speakingSpeedWpm} WPM speaking).</li>
-            </ul>
-          </div>
-        )}
-      </div>
     </div>
   );
 };

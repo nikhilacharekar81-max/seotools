@@ -30,7 +30,7 @@ const MainAppContent: React.FC = () => {
       <CommandPalette />
 
       {viewMode === 'public' ? (
-        /* PUBLIC SMALLSEOTOOLS PORTAL & ONLINE UTILITIES */
+        /* PUBLIC SEOTOOLS PORTAL & ONLINE UTILITIES */
         <div className="flex flex-col min-h-screen">
           <PublicHeader />
           <PublicWebsite />
