@@ -1,6 +1,8 @@
 import axios from 'axios';
 import * as cheerio from 'cheerio';
 import dns from 'dns';
+import http from 'http';
+import https from 'https';
 import { promisify } from 'util';
 
 const lookupPromise = promisify(dns.lookup);
@@ -38,13 +40,29 @@ export function isPrivateIp(ip: string): boolean {
   return false;
 }
 
+// Custom socket lookup overrides to block DNS rebinding SSRF attacks at connection establishment time
+const safeLookup = (hostname: string, options: any, callback: any) => {
+  dns.lookup(hostname, options, (err, address, family) => {
+    if (err) {
+      return callback(err);
+    }
+    if (isPrivateIp(address)) {
+      return callback(new Error(`SSRF Prevention: Connection forbidden to private/internal IP address (${address}).`));
+    }
+    callback(null, address, family);
+  });
+};
+
+const customHttpAgent = new http.Agent({ lookup: safeLookup, keepAlive: false });
+const customHttpsAgent = new https.Agent({ lookup: safeLookup, keepAlive: false });
+
 /**
  * Safe client-side fetcher with active SSRF protection, size checks, and timeouts (Phase 6 & 14)
  */
 export async function fetchWithSsrfProtection(urlStr: string): Promise<string> {
   const normalizedUrl = urlStr.trim();
   
-  // 1. Resolve host and block private networks
+  // 1. Resolve host and block private networks prior to socket connection
   try {
     const parsedUrl = new URL(normalizedUrl);
     const hostname = parsedUrl.hostname;
@@ -63,11 +81,13 @@ export async function fetchWithSsrfProtection(urlStr: string): Promise<string> {
     return cached.text;
   }
 
-  // 3. Request with strict size limit (1MB) and timeout (3500ms)
+  // 3. Request with strict size limit (1MB) and timeout (3500ms) over safe agents
   try {
     const response = await axios.get(normalizedUrl, {
       timeout: 3500,
       maxContentLength: 1024 * 1024, // 1MB Limit
+      httpAgent: customHttpAgent,
+      httpsAgent: customHttpsAgent,
       headers: {
         'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
       },

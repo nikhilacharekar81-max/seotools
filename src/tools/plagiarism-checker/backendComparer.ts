@@ -133,7 +133,7 @@ export async function runBackendPlagiarismScan(
 
             if (score >= matchThreshold && score > bestMatch.score) {
               bestMatch = {
-                matchType: score >= 85 ? 'exact' : 'partial',
+                matchType: score === 100 ? 'exact' : 'partial',
                 score,
                 source: {
                   title: sourceDoc.title,
@@ -244,6 +244,7 @@ export async function runBackendPlagiarismScan(
     matchedSpans,
     sources,
     scannedAt: new Date().toLocaleString(),
-    durationMs: Math.max(25, durationMs)
+    durationMs: Math.max(25, durationMs),
+    searchStatus
   };
 }

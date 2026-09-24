@@ -611,6 +611,16 @@ ${s.matchedSource ? `Source: ${s.matchedSource.title} (${s.matchedSource.url})\n
       {/* Highlighting Inspector Panel */}
       {activeTab === 'results' && report && (
         <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden p-5 space-y-4">
+          {report.searchStatus === 'SEARCH_ERROR' && (
+            <div className="bg-amber-50 border border-amber-200 p-4 rounded-xl text-amber-900 text-xs font-medium space-y-1">
+              <div className="flex items-center gap-1.5 font-bold">
+                <AlertTriangle className="w-4 h-4 text-amber-600" />
+                <span>Unable to complete web-source verification</span>
+              </div>
+              <p>The search indexing service failed to return candidate URLs. Results shown are limited to internal comparison checks.</p>
+            </div>
+          )}
+
           <div className="flex items-center justify-between border-b border-slate-100 pb-3">
             <h3 className="text-sm font-bold text-slate-800 uppercase tracking-wider">High-Contrast Highlight Scanner</h3>
             <button

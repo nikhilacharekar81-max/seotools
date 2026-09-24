@@ -58,6 +58,7 @@ export interface PlagiarismReport {
   }[];
   scannedAt: string;
   durationMs: number;
+  searchStatus?: 'COMPLETED' | 'PARTIAL_SCAN' | 'SEARCH_ERROR' | 'FAILED';
 }
 
 export interface ReferenceCorpusEntry {

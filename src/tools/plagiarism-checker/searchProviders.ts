@@ -128,7 +128,12 @@ export class TestModeSearchProvider implements SearchProvider {
  */
 export class SearchProviderFactory {
   static getProvider(): SearchProvider {
-    const providerType = process.env.SEARCH_PROVIDER || 'test_mode';
+    const isProd = process.env.NODE_ENV === 'production';
+    const providerType = process.env.SEARCH_PROVIDER || (isProd ? 'google' : 'test_mode');
+    
+    if (isProd && providerType.toLowerCase() === 'test_mode') {
+      throw new Error('Configuration Error: Plagiarism Checker is running in production, but test_mode is active. Test mode is forbidden in production environments.');
+    }
     
     switch (providerType.toLowerCase()) {
       case 'google':

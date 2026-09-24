@@ -102,7 +102,12 @@ export async function discoverCandidateSources(
   for (const query of queries) {
     try {
       // Wrap query in double quotes to find exact matching pages on the search engine
-      const searchResponse = await provider.search(`"${query}"`);
+      let searchResponse = await provider.search(`"${query}"`);
+      
+      // Fallback: If exact quoted query returns 0 results, search again without quotes
+      if (searchResponse.length === 0) {
+        searchResponse = await provider.search(query);
+      }
       
       for (const result of searchResponse) {
         if (!result.url) continue;
