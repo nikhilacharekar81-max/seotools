@@ -6,6 +6,9 @@ import { PlagiarismCheckerComponent } from '../../tools/plagiarism-checker/Plagi
 import { ArticleRewriterComponent } from '../../tools/article-rewriter/ArticleRewriterComponent';
 import { BacklinkCheckerComponent } from '../../tools/backlink-checker/BacklinkCheckerComponent';
 import { SerpPreviewComponent } from '../../tools/serp-preview/SerpPreviewComponent';
+import { KeywordDensityComponent } from '../../tools/keyword-density/KeywordDensityComponent';
+import { CaseConverterComponent } from '../../tools/case-converter/CaseConverterComponent';
+import { HashGeneratorComponent } from '../../tools/hash-generator/HashGeneratorComponent';
 import { 
   Search, 
   Sparkles, 
@@ -535,6 +538,9 @@ const ToolWorkspace: React.FC<{ tool: ToolModule }> = ({ tool }) => {
   const isRewriter = tool.id === 'tool_rewriter' || tool.slug === 'article-rewriter';
   const isBacklinks = tool.id === 'tool_backlink' || tool.slug === 'backlink-checker';
   const isSerpPreview = tool.id === 'tool_meta_gen' || tool.slug === 'meta-tag-generator';
+  const isKeywordDensity = tool.id === 'tool_density' || tool.slug === 'keyword-density-checker';
+  const isCaseConverter = tool.id === 'tool_case' || tool.slug === 'case-converter';
+  const isHashGen = tool.id === 'tool_md5' || tool.slug === 'md5-generator';
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-8 py-8 flex-1 w-full space-y-6">
@@ -683,9 +689,14 @@ const ToolWorkspace: React.FC<{ tool: ToolModule }> = ({ tool }) => {
                       <BacklinkCheckerComponent tool={tool} />
                     ) : isSerpPreview ? (
                       <SerpPreviewComponent tool={tool} />
+                    ) : isKeywordDensity ? (
+                      <KeywordDensityComponent tool={tool} />
+                    ) : isCaseConverter ? (
+                      <CaseConverterComponent tool={tool} />
+                    ) : isHashGen ? (
+                      <HashGeneratorComponent tool={tool} />
                     ) : (
-                      /* SIMULATED INTERACTIVE SEO TOOL WORKSPACE */
-                      <SimulatedSeoTool tool={tool} />
+                      <TextCounterComponent tool={tool} />
                     )}
                   </div>
                 );
@@ -895,84 +906,6 @@ const ToolWorkspace: React.FC<{ tool: ToolModule }> = ({ tool }) => {
             }
           })}
       </div>
-    </div>
-  );
-};
-
-// COMPONENT: Simulated Interactive Workspace for non-flagship catalog tools
-const SimulatedSeoTool: React.FC<{ tool: ToolModule }> = ({ tool }) => {
-  const [inputVal, setInputVal] = useState('https://example.com/blog/seo-best-practices');
-  const [loading, setLoading] = useState(false);
-  const [analyzed, setAnalyzed] = useState(false);
-
-  const handleRun = () => {
-    setLoading(true);
-    setTimeout(() => {
-      setLoading(false);
-      setAnalyzed(true);
-    }, 450);
-  };
-
-  return (
-    <div className="bg-white rounded-2xl border border-slate-200 p-6 sm:p-8 shadow-xs space-y-6">
-      <div className="space-y-2">
-        <label className="text-xs font-bold text-slate-700 uppercase tracking-wider block">
-          Target URL, Domain, or Content Input:
-        </label>
-        <div className="flex flex-col sm:flex-row gap-3">
-          <input
-            type="text"
-            value={inputVal}
-            onChange={(e) => setInputVal(e.target.value)}
-            placeholder="Enter URL, domain, or target query..."
-            className="flex-1 bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-sm text-slate-800 focus:outline-hidden focus:border-blue-500 focus:bg-white"
-          />
-          <button
-            onClick={handleRun}
-            disabled={loading}
-            className="px-6 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-bold transition-colors cursor-pointer flex items-center justify-center gap-2 shadow-xs"
-          >
-            {loading ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Zap className="w-4 h-4 text-emerald-400" />}
-            <span>{loading ? 'Analyzing...' : 'Run Free Check'}</span>
-          </button>
-        </div>
-      </div>
-
-      {analyzed ? (
-        <div className="border border-emerald-200 bg-emerald-50/50 rounded-xl p-5 space-y-4">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-bold text-emerald-800 uppercase tracking-wider flex items-center gap-1.5">
-              <CheckCircle2 className="w-4 h-4 text-emerald-600" />
-              <span>Free Analysis Report for {tool.name}</span>
-            </span>
-            <span className="text-[11px] font-mono text-emerald-700 bg-emerald-100 px-2 py-0.5 rounded">Execution: 42ms</span>
-          </div>
-
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-center">
-            <div className="bg-white p-3 rounded-lg border border-emerald-100 shadow-2xs">
-              <span className="text-[10px] text-slate-400 font-bold uppercase block">SEO Health</span>
-              <span className="text-xl font-extrabold text-emerald-600">96/100</span>
-            </div>
-            <div className="bg-white p-3 rounded-lg border border-emerald-100 shadow-2xs">
-              <span className="text-[10px] text-slate-400 font-bold uppercase block">Response Time</span>
-              <span className="text-xl font-extrabold text-slate-900">84ms</span>
-            </div>
-            <div className="bg-white p-3 rounded-lg border border-emerald-100 shadow-2xs">
-              <span className="text-[10px] text-slate-400 font-bold uppercase block">Status</span>
-              <span className="text-xl font-extrabold text-blue-600">200 OK</span>
-            </div>
-            <div className="bg-white p-3 rounded-lg border border-emerald-100 shadow-2xs">
-              <span className="text-[10px] text-slate-400 font-bold uppercase block">Indexed</span>
-              <span className="text-xl font-extrabold text-emerald-600">Yes</span>
-            </div>
-          </div>
-        </div>
-      ) : (
-        <div className="border border-dashed border-slate-200 rounded-xl p-6 text-center text-xs text-slate-400 space-y-2">
-          <p className="font-semibold text-slate-600">Ready to execute {tool.name}</p>
-          <p>Click "Run Free Check" above to perform instantaneous real-time analysis.</p>
-        </div>
-      )}
     </div>
   );
 };

@@ -527,9 +527,65 @@ const PlatformContext = createContext<PlatformContextType | undefined>(undefined
 export const PlatformProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [viewMode, setViewMode] = useState<'public' | 'admin'>('public');
   const [activeAdminTab, setActiveAdminTab] = useState<string>('dashboard');
-  const [publicRoute, setPublicRoute] = useState<{ page: 'home' | 'tool' | 'blog' | 'blog_post' | 'pricing' | 'custom_page'; param?: string }>({ page: 'home' });
+  
+  // Parse initial route from browser URL
+  const getInitialRoute = (): { page: 'home' | 'tool' | 'blog' | 'blog_post' | 'pricing' | 'custom_page'; param?: string } => {
+    if (typeof window === 'undefined') return { page: 'home' };
+    const path = window.location.pathname.replace(/^\/+|\/+$/g, '');
+    if (!path) return { page: 'home' };
+
+    if (path.startsWith('tools/')) {
+      const slug = path.replace(/^tools\//, '');
+      return { page: 'tool', param: slug };
+    }
+    if (path === 'blog') return { page: 'blog' };
+    if (path.startsWith('blog/')) {
+      return { page: 'blog_post', param: path.replace(/^blog\//, '') };
+    }
+    if (path === 'pricing') return { page: 'pricing' };
+
+    // Direct slug matches
+    const knownSlugs = ['plagiarism-checker', 'article-rewriter', 'backlink-checker', 'meta-tag-generator', 'text-counter', 'keyword-density-checker', 'case-converter', 'md5-generator'];
+    if (knownSlugs.includes(path)) {
+      return { page: 'tool', param: path };
+    }
+
+    return { page: 'home' };
+  };
+
+  const [publicRoute, setPublicRoute] = useState<{ page: 'home' | 'tool' | 'blog' | 'blog_post' | 'pricing' | 'custom_page'; param?: string }>(getInitialRoute);
   const [showDeveloperDetails, setShowDeveloperDetails] = useState<boolean>(false);
   const [isCommandPaletteOpen, setIsCommandPaletteOpen] = useState<boolean>(false);
+
+  // Sync browser URL whenever publicRoute changes
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    let targetPath = '/';
+    if (publicRoute.page === 'tool' && publicRoute.param) {
+      targetPath = `/tools/${publicRoute.param}`;
+    } else if (publicRoute.page === 'blog') {
+      targetPath = '/blog';
+    } else if (publicRoute.page === 'blog_post' && publicRoute.param) {
+      targetPath = `/blog/${publicRoute.param}`;
+    } else if (publicRoute.page === 'pricing') {
+      targetPath = '/pricing';
+    } else if (publicRoute.page === 'custom_page' && publicRoute.param) {
+      targetPath = `/${publicRoute.param}`;
+    }
+
+    if (window.location.pathname !== targetPath) {
+      window.history.pushState({ route: publicRoute }, '', targetPath);
+    }
+  }, [publicRoute]);
+
+  // Handle browser back / forward navigation
+  useEffect(() => {
+    const handlePopState = () => {
+      setPublicRoute(getInitialRoute());
+    };
+    window.addEventListener('popstate', handlePopState);
+    return () => window.removeEventListener('popstate', handlePopState);
+  }, []);
 
   // Tools: exactly ONE installed tool per User Requirement 1: Text Counter & Analyzer
   const [tools, setTools] = useState<ToolModule[]>(() => {
