@@ -12,7 +12,16 @@ export interface SentenceResult {
   suggestedRewrite?: string;
 }
 
+export interface AiDetectionResult {
+  score: number; // 0 to 100 (probability of AI content)
+  label: 'Highly Likely Human' | 'Likely AI-Generated' | 'Mixed Content / Augmented';
+  burstiness: number; // Sentence variance index
+  perplexityCategory: 'Natural & High Variation' | 'Moderate / Mixed' | 'Low / Machine-Uniform';
+  indicators: string[];
+}
+
 export interface PlagiarismReport {
+  id: string;
   totalWords: number;
   totalCharacters: number;
   totalSentences: number;
@@ -20,6 +29,7 @@ export interface PlagiarismReport {
   uniqueSentencesCount: number;
   plagiarismPercentage: number;
   uniquePercentage: number;
+  aiDetection: AiDetectionResult;
   sentences: SentenceResult[];
   sources: { domain: string; url: string; matchCount: number; percentage: number }[];
   scannedAt: string;
@@ -108,13 +118,11 @@ export function countWords(text: string): number {
 
 export function splitIntoSentences(text: string): string[] {
   if (!text || !text.trim()) return [];
-  // Preserve sentences while handling decimals, abbreviations, etc.
   const clean = text
     .replace(/\r\n/g, '\n')
     .replace(/\r/g, '\n')
     .trim();
 
-  // Split by period, exclamation, or question mark followed by space or newline
   const parts = clean.split(/(?<=[.!?。！？])\s+(?=[A-Z0-9\u4e00-\u9fa5"“'‘])/);
   
   const sentences: string[] = [];
@@ -125,7 +133,6 @@ export function splitIntoSentences(text: string): string[] {
     }
   }
 
-  // If text didn't end with punctuation or was a single paragraph
   if (sentences.length === 0 && clean.length > 0) {
     return [clean];
   }
@@ -133,18 +140,16 @@ export function splitIntoSentences(text: string): string[] {
   return sentences;
 }
 
-// Generate deterministic hash code for simulated shingle matching
 function simpleHash(str: string): number {
   let hash = 0;
   for (let i = 0; i < str.length; i++) {
     const char = str.charCodeAt(i);
     hash = (hash << 5) - hash + char;
-    hash |= 0; // Convert to 32bit integer
+    hash |= 0;
   }
   return Math.abs(hash);
 }
 
-// Check sentence against known patterns or deterministic fingerprint matching
 export function analyzeSentence(
   sentence: string, 
   excludedUrl?: string
@@ -167,14 +172,14 @@ export function analyzeSentence(
           title: item.title,
           url: item.url,
           domain: item.domain,
-          snippet: sentence
+          snippet: `Verbatim crawl match from public domain index: "${sentence}"`
         },
         suggestedRewrite: item.rewrite
       };
     }
   }
 
-  // 2. Sentences with less than 4 words are considered too brief to be uniquely plagiarized
+  // 2. Sentences with less than 4 words are considered too brief
   if (words < 4) {
     return {
       id: `sent_${Math.random().toString(36).substring(2, 9)}`,
@@ -184,10 +189,8 @@ export function analyzeSentence(
     };
   }
 
-  // 3. Deterministic shingling simulation based on sentence vocabulary frequency:
-  // If sentence contains very common textbook phrasing, flag with probabilistic matching
+  // 3. Deterministic shingling simulation
   const hash = simpleHash(clean);
-  // Approximately 15-20% of typical arbitrary sample sentences will match existing indexed literature
   const isDuplicate = hash % 5 === 0;
 
   if (isDuplicate) {
@@ -203,9 +206,8 @@ export function analyzeSentence(
       };
     }
 
-    const similarity = 85 + (hash % 16); // 85% to 100%
+    const similarity = 85 + (hash % 16);
 
-    // Generate dynamic synonym substitution for rewrite recommendation
     const rewrite = sentence
       .replace(/\bimportant\b/gi, 'crucial')
       .replace(/\bprocess\b/gi, 'procedure')
@@ -222,7 +224,7 @@ export function analyzeSentence(
       isPlagiarized: true,
       similarityScore: similarity,
       matchedSource: {
-        title: `${source.title} (Cached Document)`,
+        title: `${source.title} (Cached Page)`,
         url: source.url,
         domain: source.domain,
         snippet: `...matched context containing identical phrasing: "${sentence.substring(0, 60)}..."`
@@ -237,6 +239,116 @@ export function analyzeSentence(
     isPlagiarized: false,
     similarityScore: 0
   };
+}
+
+// AI Content & Perplexity/Burstiness analyzer
+export function calculateAiProbability(text: string, sentences: string[]): AiDetectionResult {
+  if (sentences.length === 0 || countWords(text) < 20) {
+    return {
+      score: 10,
+      label: 'Highly Likely Human',
+      burstiness: 45,
+      perplexityCategory: 'Natural & High Variation',
+      indicators: ['Short text sample', 'Natural length variation']
+    };
+  }
+
+  // Calculate sentence length variance (burstiness)
+  const sentenceLengths = sentences.map(s => countWords(s));
+  const avgLength = sentenceLengths.reduce((a, b) => a + b, 0) / sentenceLengths.length;
+  const variance = sentenceLengths.reduce((acc, len) => acc + Math.pow(len - avgLength, 2), 0) / sentenceLengths.length;
+  const stdDev = Math.sqrt(variance);
+
+  // AI models often have uniform sentence lengths (low stdDev) and repetitive connector words
+  const aiPhrases = [
+    /\bin conclusion\b/i,
+    /\bfurthermore\b/i,
+    /\bmoreover\b/i,
+    /\bit is important to note\b/i,
+    /\bin summary\b/i,
+    /\bdelve into\b/i,
+    /\btapestry\b/i,
+    /\btestament to\b/i,
+    /\bseamlessly\b/i,
+    /\bparamount importance\b/i
+  ];
+
+  let aiPhraseHits = 0;
+  for (const regex of aiPhrases) {
+    if (regex.test(text)) aiPhraseHits++;
+  }
+
+  // Very low standard deviation (< 4 words variance across sentences) is a hallmark of machine generation
+  let aiScore = 15;
+  const indicators: string[] = [];
+
+  if (stdDev < 3.5 && sentenceLengths.length > 4) {
+    aiScore += 40;
+    indicators.push('Low sentence length variance (Machine-uniform burstiness)');
+  } else if (stdDev > 7.0) {
+    aiScore -= 10;
+    indicators.push('High natural sentence length variance');
+  }
+
+  if (aiPhraseHits >= 3) {
+    aiScore += 35;
+    indicators.push(`High frequency of typical synthetic transition markers (${aiPhraseHits} detected)`);
+  } else if (aiPhraseHits === 1) {
+    aiScore += 10;
+  }
+
+  aiScore = Math.min(95, Math.max(5, aiScore));
+
+  let label: AiDetectionResult['label'] = 'Highly Likely Human';
+  if (aiScore >= 65) {
+    label = 'Likely AI-Generated';
+  } else if (aiScore >= 35) {
+    label = 'Mixed Content / Augmented';
+  }
+
+  let perplexity: AiDetectionResult['perplexityCategory'] = 'Natural & High Variation';
+  if (aiScore >= 70) {
+    perplexity = 'Low / Machine-Uniform';
+  } else if (aiScore >= 40) {
+    perplexity = 'Moderate / Mixed';
+  }
+
+  return {
+    score: aiScore,
+    label,
+    burstiness: Math.round(stdDev * 10),
+    perplexityCategory: perplexity,
+    indicators: indicators.length > 0 ? indicators : ['Natural vocabulary entropy', 'Standard cadence']
+  };
+}
+
+// Diff comparison helper: highlights verbatim matching words between submitted sentence and source
+export function getVerbatimMatches(userSentence: string, sourceSnippet: string): { word: string; isMatch: boolean }[] {
+  const userWords = userSentence.split(/\s+/);
+  const sourceLower = sourceSnippet.toLowerCase();
+
+  return userWords.map(word => {
+    const cleanWord = word.toLowerCase().replace(/[^a-z0-9]/g, '');
+    const isMatch = cleanWord.length > 3 && sourceLower.includes(cleanWord);
+    return { word, isMatch };
+  });
+}
+
+// Scrape / Fetch text simulator for "Check by URL" feature
+export function extractArticleFromUrl(url: string): string {
+  const cleanUrl = url.toLowerCase().trim();
+
+  if (cleanUrl.includes('wikipedia.org')) {
+    return `Search engine optimization is the process of optimizing website traffic. By implementing responsive design, high-quality content, and technical audits, digital creators improve organic rankings. Quality articles answer user intent with original depth and authoritative facts. Modern web crawlers parse semantic tags, structured data, and keyword relevance to determine visibility.`;
+  }
+  
+  if (cleanUrl.includes('tech') || cleanUrl.includes('blog') || cleanUrl.includes('medium')) {
+    return `Artificial intelligence is the simulation of human intelligence processes by machines. It is rapidly transforming software engineering, automated testing, and computational search indexing. Web developers utilize neural network embeddings to understand topical clusters and semantic intent. Consistent optimization of user experience metrics ensures sustained digital authority.`;
+  }
+
+  // Default clean synthesized content for any other URL
+  const domain = url.replace(/^https?:\/\//i, '').split('/')[0] || 'website.com';
+  return `Content publication on ${domain} focuses on delivering authoritative information for target audiences. Modern web search algorithms prioritize unique perspectives, comprehensive research, and fast page loading performance. Content is king when it comes to engaging online readers across desktop and mobile devices. Digital webmasters frequently calibrate on-page copy to maintain high performance across search engines.`;
 }
 
 export function runPlagiarismCheck(text: string, excludedUrl?: string): PlagiarismReport {
@@ -293,9 +405,11 @@ export function runPlagiarismCheck(text: string, excludedUrl?: string): Plagiari
     percentage: results.length > 0 ? Math.round((s.matchCount / results.length) * 100) : 0
   }));
 
+  const aiDetection = calculateAiProbability(text, sentencesList);
   const endTime = performance.now();
 
   return {
+    id: `rpt_${Math.random().toString(36).substring(2, 9).toUpperCase()}`,
     totalWords,
     totalCharacters,
     totalSentences: results.length,
@@ -303,9 +417,17 @@ export function runPlagiarismCheck(text: string, excludedUrl?: string): Plagiari
     uniqueSentencesCount,
     plagiarismPercentage,
     uniquePercentage,
+    aiDetection,
     sentences: results,
     sources,
-    scannedAt: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' }),
+    scannedAt: new Date().toLocaleString([], { 
+      year: 'numeric', 
+      month: 'short', 
+      day: 'numeric', 
+      hour: '2-digit', 
+      minute: '2-digit', 
+      second: '2-digit' 
+    }),
     durationMs: Math.round(endTime - startTime)
   };
 }

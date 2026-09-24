@@ -44,6 +44,24 @@ export const PublicHeader: React.FC = () => {
         </div>
 
         <div className="flex items-center gap-2.5">
+          {/* Language Switcher */}
+          <div className="flex items-center gap-1 bg-slate-800 text-slate-200 px-2 py-0.5 rounded text-[11px] border border-slate-700">
+            <Globe className="w-3 h-3 text-blue-400" />
+            <select
+              defaultValue="en"
+              className="bg-transparent border-none text-slate-200 text-[11px] focus:outline-hidden cursor-pointer"
+              aria-label="Select Language"
+            >
+              <option value="en" className="bg-slate-900 text-white">English (EN)</option>
+              <option value="es" className="bg-slate-900 text-white">Español (ES)</option>
+              <option value="fr" className="bg-slate-900 text-white">Français (FR)</option>
+              <option value="de" className="bg-slate-900 text-white">Deutsch (DE)</option>
+              <option value="pt" className="bg-slate-900 text-white">Português (PT)</option>
+              <option value="it" className="bg-slate-900 text-white">Italiano (IT)</option>
+              <option value="ja" className="bg-slate-900 text-white">日本語 (JA)</option>
+            </select>
+          </div>
+
           <button
             onClick={() => setIsCommandPaletteOpen(true)}
             className="flex items-center gap-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200 px-2.5 py-1 rounded text-xs transition-colors cursor-pointer border border-slate-700 shadow-2xs"

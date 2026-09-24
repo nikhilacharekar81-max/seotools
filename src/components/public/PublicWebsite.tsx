@@ -3,6 +3,9 @@ import { usePlatform } from '../../context/PlatformContext';
 import { ToolModule, ToolPageSection } from '../../types';
 import { TextCounterComponent } from '../../tools/text-counter/TextCounterComponent';
 import { PlagiarismCheckerComponent } from '../../tools/plagiarism-checker/PlagiarismCheckerComponent';
+import { ArticleRewriterComponent } from '../../tools/article-rewriter/ArticleRewriterComponent';
+import { BacklinkCheckerComponent } from '../../tools/backlink-checker/BacklinkCheckerComponent';
+import { SerpPreviewComponent } from '../../tools/serp-preview/SerpPreviewComponent';
 import { 
   Search, 
   Sparkles, 
@@ -192,19 +195,19 @@ export const PublicWebsite: React.FC = () => {
                   Plagiarism Checker
                 </button>
                 <button
-                  onClick={() => setSearchQuery('Keyword')}
+                  onClick={() => setPublicRoute({ page: 'tool', param: 'article-rewriter' })}
                   className="bg-slate-800/80 hover:bg-blue-600 text-slate-200 hover:text-white px-2.5 py-1 rounded-md transition-colors cursor-pointer border border-slate-700"
                 >
-                  Keyword Density
+                  Article Rewriter
                 </button>
                 <button
-                  onClick={() => setSearchQuery('Meta')}
+                  onClick={() => setPublicRoute({ page: 'tool', param: 'meta-tag-generator' })}
                   className="bg-slate-800/80 hover:bg-blue-600 text-slate-200 hover:text-white px-2.5 py-1 rounded-md transition-colors cursor-pointer border border-slate-700"
                 >
-                  Meta Tag Studio
+                  SERP &amp; Meta Studio
                 </button>
                 <button
-                  onClick={() => setSearchQuery('Backlink')}
+                  onClick={() => setPublicRoute({ page: 'tool', param: 'backlink-checker' })}
                   className="bg-slate-800/80 hover:bg-blue-600 text-slate-200 hover:text-white px-2.5 py-1 rounded-md transition-colors cursor-pointer border border-slate-700"
                 >
                   Backlink Checker
@@ -529,6 +532,9 @@ const ToolWorkspace: React.FC<{ tool: ToolModule }> = ({ tool }) => {
 
   const isTextCounter = tool.id === 'tool_text_counter' || tool.slug === 'text-counter' || tool.sourcePath?.includes('text-counter');
   const isPlagiarismChecker = tool.id === 'tool_plagiarism' || tool.slug === 'plagiarism-checker';
+  const isRewriter = tool.id === 'tool_rewriter' || tool.slug === 'article-rewriter';
+  const isBacklinks = tool.id === 'tool_backlink' || tool.slug === 'backlink-checker';
+  const isSerpPreview = tool.id === 'tool_meta_gen' || tool.slug === 'meta-tag-generator';
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-8 py-8 flex-1 w-full space-y-6">
@@ -671,6 +677,12 @@ const ToolWorkspace: React.FC<{ tool: ToolModule }> = ({ tool }) => {
                       <TextCounterComponent tool={tool} />
                     ) : isPlagiarismChecker ? (
                       <PlagiarismCheckerComponent tool={tool} />
+                    ) : isRewriter ? (
+                      <ArticleRewriterComponent tool={tool} />
+                    ) : isBacklinks ? (
+                      <BacklinkCheckerComponent tool={tool} />
+                    ) : isSerpPreview ? (
+                      <SerpPreviewComponent tool={tool} />
                     ) : (
                       /* SIMULATED INTERACTIVE SEO TOOL WORKSPACE */
                       <SimulatedSeoTool tool={tool} />
