@@ -429,83 +429,9 @@ export function analyzeSentence(
     };
   }
 
-  // 1. Check against the verified reference corpus
-  for (const doc of VERIFIED_REFERENCE_CORPUS) {
-    if (excludedUrl && doc.url.toLowerCase().includes(excludedUrl.toLowerCase().trim())) {
-      continue;
-    }
-
-    if (doc.pattern.test(cleanLower)) {
-      return {
-        id: `sent_${Math.random().toString(36).substring(2, 9)}`,
-        originalText: sentence,
-        matchType: 'exact',
-        similarityScore: 100,
-        matchedWordsCount: totalWordsCount,
-        totalWordsCount,
-        matchedSource: {
-          title: doc.title,
-          url: doc.url,
-          domain: doc.domain,
-          matchedSnippet: doc.verifiedSnippet
-        },
-        suggestedAlternative: doc.suggestedAlternative
-      };
-    }
-
-    const jaccardScore = calculateJaccardSimilarity(sentence, doc.verifiedSnippet, ngramSize);
-    if (jaccardScore >= matchThreshold) {
-      return {
-        id: `sent_${Math.random().toString(36).substring(2, 9)}`,
-        originalText: sentence,
-        matchType: jaccardScore >= 85 ? 'exact' : 'partial',
-        similarityScore: jaccardScore,
-        matchedWordsCount: Math.round((jaccardScore / 100) * totalWordsCount),
-        totalWordsCount,
-        matchedSource: {
-          title: doc.title,
-          url: doc.url,
-          domain: doc.domain,
-          matchedSnippet: doc.verifiedSnippet
-        },
-        suggestedAlternative: doc.suggestedAlternative
-      };
-    }
-  }
-
-  // 2. Check against dynamic common web phrase signatures
-  const tokens = tokenizeText(cleanLower);
-  for (const sig of COMMON_WEB_SIGNATURES) {
-    if (excludedUrl && sig.url.toLowerCase().includes(excludedUrl.toLowerCase().trim())) {
-      continue;
-    }
-
-    const matchedKwCount = sig.keywords.filter(kw => cleanLower.includes(kw)).length;
-    const kwMatchRatio = matchedKwCount / sig.keywords.length;
-
-    if (kwMatchRatio >= 0.5) {
-      const levScore = calculateLevenshteinSimilarity(sentence, sig.snippet);
-      const score = Math.max(Math.round(kwMatchRatio * 90), levScore);
-
-      if (score >= matchThreshold) {
-        return {
-          id: `sent_${Math.random().toString(36).substring(2, 9)}`,
-          originalText: sentence,
-          matchType: score >= 85 ? 'exact' : 'partial',
-          similarityScore: score,
-          matchedWordsCount: Math.round((score / 100) * totalWordsCount),
-          totalWordsCount,
-          matchedSource: {
-            title: sig.title,
-            url: sig.url,
-            domain: sig.domain,
-            matchedSnippet: sig.snippet
-          },
-          suggestedAlternative: sig.alternative
-        };
-      }
-    }
-  }
+  // 1. In Phase 2, we remove the fake static matching against local mock corpora.
+  // Similarity comparisons will be executed against actual fetched web pages in subsequent phases.
+  // We keep the similarity algorithms intact for future backend fetching verification.
 
   // No match found in the reference indices
   return {
