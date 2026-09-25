@@ -118,6 +118,17 @@ export class TestModeSearchProvider implements SearchProvider {
       ];
     }
 
+    // Test Scenario: Example Domain documentation
+    if (qLower.includes('example') || qLower.includes('documentation') || qLower.includes('permission')) {
+      return [
+        {
+          title: 'Example Domain - IANA',
+          url: 'http://example.com',
+          snippet: 'This domain is for use in documentation examples without needing permission.'
+        }
+      ];
+    }
+
     // Default neutral results
     return [];
   }

@@ -162,8 +162,8 @@ export function extractCleanArticleText(html: string): string {
 
   const $ = cheerio.load(html);
 
-  // Purge non-content and layout blocks instantly
-  $('script, style, noscript, iframe, svg, nav, header, footer, aside, form, button, [role="banner"], [role="navigation"], .cookie-banner, .cookie-consent, #menu, .sidebar, #footer, .footer, #header, .header, #nav, .nav').remove();
+  // Purge non-content, citation footnotes, and layout blocks instantly
+  $('script, style, noscript, iframe, svg, nav, header, footer, aside, form, button, [role="banner"], [role="navigation"], .cookie-banner, .cookie-consent, #menu, .sidebar, #footer, .footer, #header, .header, #nav, .nav, sup.reference, .reference, .citation').remove();
 
   let contentRoot = $('body');
 

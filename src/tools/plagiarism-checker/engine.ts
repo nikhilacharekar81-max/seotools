@@ -239,8 +239,15 @@ export function splitIntoSentences(text: string): string[] {
     currentSentence += char;
     
     if (terminators.has(char)) {
+      // Consume any closing quotes, parentheses, brackets, or footnote digits (e.g. .", .', .[12], .)
+      let scanIndex = i + 1;
+      while (scanIndex < clean.length && /[\]\[\"'”’\)0-9]/.test(clean[scanIndex])) {
+        currentSentence += clean[scanIndex];
+        scanIndex++;
+      }
+
       let hasSpaceAfter = false;
-      let nextCharIndex = i + 1;
+      let nextCharIndex = scanIndex;
       while (nextCharIndex < clean.length && /\s/.test(clean[nextCharIndex])) {
         hasSpaceAfter = true;
         nextCharIndex++;
@@ -249,7 +256,7 @@ export function splitIntoSentences(text: string): string[] {
       const nextChar = clean[nextCharIndex];
       if (
         nextCharIndex === clean.length || 
-        (hasSpaceAfter && nextChar && /[A-Z0-9\u4e00-\u9fa5"“'‘]/.test(nextChar))
+        (hasSpaceAfter && nextChar && /[A-Z0-9\u4e00-\u9fa5\p{L}"“'‘]/u.test(nextChar))
       ) {
         const trimmed = currentSentence.trim();
         if (trimmed.length > 0) {
@@ -281,7 +288,7 @@ export function tokenizeText(text: string): string[] {
   return text
     .normalize('NFC')
     .toLowerCase()
-    .replace(/[^\p{L}\p{N}\s]/gu, ' ')
+    .replace(/[^\p{L}\p{M}\p{N}\s]/gu, ' ')
     .split(/\s+/)
     .filter(t => t.length > 1);
 }
@@ -301,7 +308,7 @@ export function normalizeTextForComparison(text: string): string {
   return text
     .normalize('NFC')
     .toLowerCase()
-    .replace(/[^\p{L}\p{N}\s]/gu, ' ')
+    .replace(/[^\p{L}\p{M}\p{N}\s]/gu, ' ')
     .replace(/\s+/g, ' ')
     .trim();
 }
@@ -403,25 +410,25 @@ export function computeDetailedWordDiff(userSentence: string, sourceSnippet: str
   const userWords = userSentence.split(/\s+/).filter(w => w.length > 0);
   const sourceWords = sourceSnippet.split(/\s+/).filter(w => w.length > 0);
 
-  const clean = (w: string) => w.toLowerCase().replace(/[^a-z0-9]/g, '');
+  const clean = (w: string) => w.normalize('NFC').toLowerCase().replace(/[^\p{L}\p{M}\p{N}]/gu, '');
 
   const userClean = userWords.map(clean);
   const sourceClean = sourceWords.map(clean);
 
-  const sourceSet = new Set(sourceClean.filter(w => w.length > 1));
-  const userSet = new Set(userClean.filter(w => w.length > 1));
+  const sourceSet = new Set(sourceClean.filter(w => w.length > 0));
+  const userSet = new Set(userClean.filter(w => w.length > 0));
 
   let exactOverlapCount = 0;
   let partialOverlapCount = 0;
 
   const userTokens: DiffToken[] = userWords.map((word, idx) => {
     const c = userClean[idx];
-    if (c.length > 1 && sourceSet.has(c)) {
+    if (c.length > 0 && sourceSet.has(c)) {
       exactOverlapCount++;
       return { word, status: 'exact-match' };
     }
-    const hasPartial = sourceClean.some(sc => sc.length > 3 && (sc.includes(c) || c.includes(sc)));
-    if (hasPartial && c.length > 3) {
+    const hasPartial = sourceClean.some(sc => sc.length > 2 && (sc.includes(c) || c.includes(sc)));
+    if (hasPartial && c.length > 2) {
       partialOverlapCount++;
       return { word, status: 'partial-match' };
     }
@@ -430,11 +437,11 @@ export function computeDetailedWordDiff(userSentence: string, sourceSnippet: str
 
   const sourceTokens: DiffToken[] = sourceWords.map((word, idx) => {
     const c = sourceClean[idx];
-    if (c.length > 1 && userSet.has(c)) {
+    if (c.length > 0 && userSet.has(c)) {
       return { word, status: 'exact-match' };
     }
-    const hasPartial = userClean.some(uc => uc.length > 3 && (uc.includes(c) || c.includes(uc)));
-    if (hasPartial && c.length > 3) {
+    const hasPartial = userClean.some(uc => uc.length > 2 && (uc.includes(c) || c.includes(uc)));
+    if (hasPartial && c.length > 2) {
       return { word, status: 'partial-match' };
     }
     return { word, status: 'unique' };

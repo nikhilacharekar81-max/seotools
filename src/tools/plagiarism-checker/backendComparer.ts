@@ -17,57 +17,31 @@ import {
  * Backend Plagiarism Coordinator (Phases 8, 9, 10, 11, 18)
  * Compares user content to real scraped webpages and returns detailed evidence metrics.
  */
-export async function runBackendPlagiarismScan(
+export interface CorpusDocument {
+  title: string;
+  url: string;
+  domain: string;
+  cleanText: string;
+}
+
+/**
+ * Deterministic Comparison Engine (Phases 8, 9, 10, 11, 18)
+ * Compares user content against a known corpus of documents.
+ * Can be tested in isolation without network or search dependencies.
+ */
+export function compareTextAgainstCorpus(
   text: string,
-  excludedUrl?: string,
-  sensitivity: 'strict' | 'standard' | 'lenient' = 'standard'
-): Promise<PlagiarismReport> {
-  const startTime = Date.now();
+  corpus: CorpusDocument[],
+  sensitivity: 'strict' | 'standard' | 'lenient' = 'standard',
+  searchStatus: 'COMPLETED' | 'PARTIAL_SCAN' | 'SEARCH_ERROR' = 'COMPLETED',
+  startTime: number = Date.now()
+): PlagiarismReport {
   const userSentences = splitIntoSentences(text);
   
   // Word/Token list across the entire document (used for overall percentage calculations)
   const allWords = text.split(/\s+/).filter(w => w.length > 0);
   const totalWords = allWords.length;
   const totalCharacters = text.length;
-
-  // 1. Discover potential matching web URLs
-  let candidates: CandidateSource[] = [];
-  let searchStatus: 'COMPLETED' | 'PARTIAL_SCAN' | 'SEARCH_ERROR' = 'COMPLETED';
-
-  try {
-    const discovery = await discoverCandidateSources(text, excludedUrl);
-    candidates = discovery.candidates;
-    searchStatus = discovery.searchStatus;
-  } catch (err: any) {
-    console.error('Search Discovery failed:', err.message);
-    searchStatus = 'SEARCH_ERROR';
-  }
-
-  // 2. Fetch and extract clean texts from candidate URLs
-  const verifiedCorpusMap = new Map<string, { title: string; url: string; domain: string; cleanText: string }>();
-
-  for (const cand of candidates) {
-    try {
-      const html = await fetchWithSsrfProtection(cand.url);
-      const cleanText = extractCleanArticleText(html);
-      
-      if (cleanText.trim().length > 20) {
-        let domain = cand.url;
-        try {
-          domain = new URL(cand.url).hostname.replace(/^www\./, '');
-        } catch {}
-
-        verifiedCorpusMap.set(cand.url, {
-          title: cand.title,
-          url: cand.url,
-          domain,
-          cleanText
-        });
-      }
-    } catch (err: any) {
-      console.warn(`Could not verify candidate source (${cand.url}):`, err.message);
-    }
-  }
 
   // Setup sensitivity parameters
   const minWords = sensitivity === 'strict' ? 4 : sensitivity === 'lenient' ? 6 : 5;
@@ -104,7 +78,7 @@ export async function runBackendPlagiarismScan(
       const normalizedUser = normalizeTextForComparison(userSent);
 
       // Check against each successfully retrieved web page content
-      for (const [url, sourceDoc] of verifiedCorpusMap.entries()) {
+      for (const sourceDoc of corpus) {
         const sourceNormalized = normalizeTextForComparison(sourceDoc.cleanText);
 
         // 1. Literal Exact Match verification (Phase 3 & 9)
@@ -128,23 +102,20 @@ export async function runBackendPlagiarismScan(
         const sourceSentences = splitIntoSentences(sourceDoc.cleanText);
         for (const srcSent of sourceSentences) {
           const jaccard = calculateJaccardSimilarity(userSent, srcSent);
-          
-          if (jaccard >= matchThreshold && jaccard > bestMatch.score) {
-            const lev = calculateLevenshteinSimilarity(userSent, srcSent);
-            const score = Math.max(jaccard, lev);
+          const lev = calculateLevenshteinSimilarity(userSent, srcSent);
+          const score = Math.max(jaccard, lev);
 
-            if (score >= matchThreshold && score > bestMatch.score) {
-              bestMatch = {
-                matchType: score === 100 ? 'exact' : 'partial', // Literal Exact Match is strictly 100%
-                score,
-                source: {
-                  title: sourceDoc.title,
-                  url: sourceDoc.url,
-                  domain: sourceDoc.domain,
-                  matchedSnippet: srcSent
-                }
-              };
-            }
+          if (score >= matchThreshold && score > bestMatch.score) {
+            bestMatch = {
+              matchType: score === 100 ? 'exact' : 'partial', // Literal Exact Match is strictly 100%
+              score,
+              source: {
+                title: sourceDoc.title,
+                url: sourceDoc.url,
+                domain: sourceDoc.domain,
+                matchedSnippet: srcSent
+              }
+            };
           }
         }
       }
@@ -266,3 +237,64 @@ export async function runBackendPlagiarismScan(
     searchStatus
   };
 }
+
+/**
+ * End-to-end Web-Source Plagiarism Scan
+ * Discovers candidate pages via search provider, fetches them with SSRF protection,
+ * extracts readable text, and delegates comparison to compareTextAgainstCorpus.
+ */
+export async function runBackendPlagiarismScan(
+  text: string,
+  excludedUrl?: string,
+  sensitivity: 'strict' | 'standard' | 'lenient' = 'standard'
+): Promise<PlagiarismReport> {
+  const startTime = Date.now();
+
+  // 1. Discover potential matching web URLs
+  let candidates: CandidateSource[] = [];
+  let searchStatus: 'COMPLETED' | 'PARTIAL_SCAN' | 'SEARCH_ERROR' = 'COMPLETED';
+
+  try {
+    const discovery = await discoverCandidateSources(text, excludedUrl);
+    candidates = discovery.candidates;
+    searchStatus = discovery.searchStatus;
+  } catch (err: any) {
+    console.error('Search Discovery failed:', err.message);
+    searchStatus = 'SEARCH_ERROR';
+  }
+
+  // 2. Fetch and extract clean texts from candidate URLs
+  const verifiedCorpusMap = new Map<string, CorpusDocument>();
+
+  for (const cand of candidates) {
+    try {
+      const html = await fetchWithSsrfProtection(cand.url);
+      const cleanText = extractCleanArticleText(html);
+      
+      if (cleanText.trim().length > 20) {
+        let domain = cand.url;
+        try {
+          domain = new URL(cand.url).hostname.replace(/^www\./, '');
+        } catch {}
+
+        verifiedCorpusMap.set(cand.url, {
+          title: cand.title,
+          url: cand.url,
+          domain,
+          cleanText
+        });
+      }
+    } catch (err: any) {
+      console.warn(`Could not verify candidate source (${cand.url}):`, err.message);
+    }
+  }
+
+  return compareTextAgainstCorpus(
+    text,
+    Array.from(verifiedCorpusMap.values()),
+    sensitivity,
+    searchStatus,
+    startTime
+  );
+}
+

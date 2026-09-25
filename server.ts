@@ -8,6 +8,7 @@ import { fileURLToPath } from 'url';
 import { runBackendPlagiarismScan } from './src/tools/plagiarism-checker/backendComparer';
 import { fetchWithSsrfProtection, extractCleanArticleText } from './src/tools/plagiarism-checker/backendExtractor';
 import { countWords } from './src/tools/plagiarism-checker/engine';
+import { apiRateLimiter } from './src/tools/plagiarism-checker/rateLimiter';
 
 dotenv.config();
 
@@ -18,42 +19,7 @@ const __dirname = path.dirname(__filename);
 const PLAGIARISM_MAX_WORDS = Number(process.env.PLAGIARISM_MAX_WORDS) || 1000;
 const PLAGIARISM_URL_MAX_WORDS = Number(process.env.PLAGIARISM_URL_MAX_WORDS) || 1000;
 
-const RATE_LIMIT_LIMIT = Number(process.env.RATE_LIMIT_LIMIT) || 50; // default 50 scans per window
-const RATE_LIMIT_WINDOW_MS = Number(process.env.RATE_LIMIT_WINDOW_MS) || 60 * 60 * 1000; // default 1 hour window
-
 // Clean memory-based rate limiter map (Phase 5)
-interface RateLimitEntry {
-  count: number;
-  resetTime: number;
-}
-const rateLimitMap = new Map<string, RateLimitEntry>();
-
-/**
- * Backend IP-Based Rate Limiting Middleware running BEFORE expensive search operations (Phase 5)
- */
-function apiRateLimiter(req: express.Request, res: express.Response, next: express.NextFunction) {
-  const ip = String(req.headers['x-forwarded-for'] || req.socket.remoteAddress || 'unknown-ip');
-  const now = Date.now();
-  const entry = rateLimitMap.get(ip);
-
-  if (!entry || now > entry.resetTime) {
-    rateLimitMap.set(ip, {
-      count: 1,
-      resetTime: now + RATE_LIMIT_WINDOW_MS
-    });
-    return next();
-  }
-
-  if (entry.count >= RATE_LIMIT_LIMIT) {
-    return res.status(429).json({
-      error: 'Rate Limit Exceeded: You have exceeded the permitted plagiarism scans for this period. Please try again later.'
-    });
-  }
-
-  entry.count++;
-  rateLimitMap.set(ip, entry);
-  next();
-}
 
 async function startServer() {
   const app = express();
@@ -192,6 +158,7 @@ async function startServer() {
   app.listen(port, () => {
     console.log(`Server is running at http://localhost:${port}`);
   });
+  return app;
 }
 
-startServer();
+export const app = await startServer();
